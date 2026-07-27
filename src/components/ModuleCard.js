@@ -1,10 +1,19 @@
+// Displays one learning-module card in the module list on StartScreen.
+// It receives a module data object and an onPress callback, then shows the
+// module's title, description, availability badge, and progress.
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+// Props come from StartScreen: module supplies the content, while onPress lets
+// this child component tell its parent which module the learner tapped.
 export default function ModuleCard({ module, onPress }) {
+  // These derived values are calculated from props on every render. They do not
+  // need state because they can always be recreated from the module data.
   const progressPercent = Math.round(module.progress * 100);
   const isComingSoon = module.status === "comingSoon";
 
   return (
+    // Pressable can provide its current pressed state to the style callback.
+    // Coming-soon cards look muted, while available cards shrink slightly.
     <Pressable
       onPress={() => onPress(module)}
       style={({ pressed }) => [
@@ -13,13 +22,18 @@ export default function ModuleCard({ module, onPress }) {
         isComingSoon && styles.disabledCard,
       ]}
     >
+      {/* Card header: the badge is conditional rendering, so it only appears
+          when isComingSoon is true. */}
       <View style={styles.headerRow}>
         <Text style={styles.title}>{module.title}</Text>
         {isComingSoon && <Text style={styles.badge}>Akan datang</Text>}
       </View>
 
+      {/* Short explanation of what the module teaches. */}
       <Text style={styles.description}>{module.description}</Text>
 
+      {/* Progress display: the inner View's width turns the numeric progress
+          into a visible bar. */}
       <View style={styles.progressBackground}>
         <View
           style={[
@@ -35,6 +49,8 @@ export default function ModuleCard({ module, onPress }) {
   );
 }
 
+// StyleSheet keeps the card's reusable React Native styles together. Unlike
+// CSS, these style objects are passed directly to native UI components.
 const styles = StyleSheet.create({
   card: {
     backgroundColor: "#ffffff",

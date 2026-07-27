@@ -1,7 +1,14 @@
+// Displays one tappable letter in the alphabet grid on AlphabetScreen.
+// It receives a letter item, whether that item is selected, and an onPress
+// callback from its parent, then renders the letter with selected styling.
 import { Pressable, StyleSheet, Text } from "react-native";
 
+// Props are values supplied by the parent component. This component uses them
+// to decide what to show and to report a tap back to AlphabetScreen.
 export default function LetterButton({ item, isSelected, onPress }) {
   return (
+    // Pressable is React Native's tappable container. Calling the callback with
+    // item lets the parent decide how the selected-letter state should change.
     <Pressable
       onPress={() => onPress(item)}
       style={[styles.button, isSelected && styles.selectedButton]}
@@ -13,6 +20,8 @@ export default function LetterButton({ item, isSelected, onPress }) {
   );
 }
 
+// StyleSheet groups reusable React Native styles and validates their property
+// names. The selected styles are added conditionally when isSelected is true.
 const styles = StyleSheet.create({
   button: {
     width: 58,
