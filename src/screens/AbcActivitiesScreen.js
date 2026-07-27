@@ -1,7 +1,7 @@
 // Displays the activity choices for the Belajar ABC module between StartScreen
-// and AlphabetScreen. It receives callbacks for opening the existing alphabet
-// activity and going back, then renders one available activity and two
-// coming-soon placeholders.
+// and the learning activities in src/activities/abc. It receives callbacks for
+// opening MengenalSemuaHurufScreen and going back, then renders one available
+// activity and two coming-soon placeholders.
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 // Keeping the activity descriptions together makes the screen easy to extend

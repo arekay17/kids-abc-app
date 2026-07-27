@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Alert, SafeAreaView, StyleSheet } from "react-native";
 import StartScreen from "./src/screens/StartScreen";
 import AbcActivitiesScreen from "./src/screens/AbcActivitiesScreen";
-import AlphabetScreen from "./src/screens/AlphabetScreen";
+import MengenalSemuaHurufScreen from "./src/activities/abc/MengenalSemuaHurufScreen";
 import { LETTERS } from "./src/data/letters";
 
 export default function App() {
@@ -25,7 +25,7 @@ export default function App() {
   // These callback handlers describe each allowed screen transition. Child
   // screens receive them as props and call them when a button is pressed.
   function handleOpenAlphabet() {
-    setScreen("alphabet");
+    setScreen("mengenalSemuaHuruf");
   }
 
   function handleBackToStart() {
@@ -48,7 +48,7 @@ export default function App() {
           onBack={handleBackToStart}
         />
       ) : (
-        <AlphabetScreen
+        <MengenalSemuaHurufScreen
           selectedLetter={selectedLetter}
           onSelectLetter={setSelectedLetter}
           onBack={handleBackToAbcActivities}

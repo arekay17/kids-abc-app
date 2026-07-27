@@ -1,17 +1,19 @@
-// Displays the ABC learning screen after the alphabet module is opened.
+// Displays the Mengenal Semua Huruf activity after it is chosen from the ABC
+// activities menu. This learning screen now lives in src/activities/abc so it
+// is kept separate from screens that mainly provide navigation choices.
 // App supplies the selected letter plus callbacks for selecting a letter and
 // going back; shared LETTERS data fills the grid, and the screen shows details
 // for the current selection above that grid.
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 // These project imports reuse the individual letter button and the single
 // source of alphabet data shared by the app.
-import LetterButton from "../components/LetterButton";
-import { LETTERS } from "../data/letters";
+import LetterButton from "../../components/LetterButton";
+import { LETTERS } from "../../data/letters";
 
 // Props let the parent keep control of state and navigation. selectedLetter is
 // the current state value; the callbacks ask the parent to update it or leave
 // this screen, which causes React to render the appropriate screen again.
-export default function AlphabetScreen({
+export default function MengenalSemuaHurufScreen({
   selectedLetter,
   onSelectLetter,
   onBack,
