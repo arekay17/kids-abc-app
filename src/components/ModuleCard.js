@@ -11,9 +11,9 @@ export default function ModuleCard({ module, onPress }) {
   const progressPercent = Math.round(module.progress * 100);
   const isComingSoon = module.status === "comingSoon";
 
+  // Pressable can provide its current pressed state to the style callback.
+  // Coming-soon cards look muted, while available cards shrink slightly.
   return (
-    // Pressable can provide its current pressed state to the style callback.
-    // Coming-soon cards look muted, while available cards shrink slightly.
     <Pressable
       onPress={() => onPress(module)}
       style={({ pressed }) => [

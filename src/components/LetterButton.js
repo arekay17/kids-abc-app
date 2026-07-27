@@ -6,9 +6,9 @@ import { Pressable, StyleSheet, Text } from "react-native";
 // Props are values supplied by the parent component. This component uses them
 // to decide what to show and to report a tap back to AlphabetScreen.
 export default function LetterButton({ item, isSelected, onPress }) {
+  // Pressable is React Native's tappable container. Calling the callback with
+  // item lets the parent decide how the selected-letter state should change.
   return (
-    // Pressable is React Native's tappable container. Calling the callback with
-    // item lets the parent decide how the selected-letter state should change.
     <Pressable
       onPress={() => onPress(item)}
       style={[styles.button, isSelected && styles.selectedButton]}
