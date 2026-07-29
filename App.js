@@ -3,6 +3,7 @@ import { Alert, SafeAreaView, StyleSheet } from "react-native";
 import StartScreen from "./src/screens/StartScreen";
 import AbcActivitiesScreen from "./src/screens/AbcActivitiesScreen";
 import MengenalSemuaHurufScreen from "./src/activities/abc/MengenalSemuaHurufScreen";
+import CariHurufScreen from "./src/activities/abc/CariHurufScreen";
 import { LETTERS } from "./src/data/letters";
 
 export default function App() {
@@ -28,6 +29,10 @@ export default function App() {
     setScreen("mengenalSemuaHuruf");
   }
 
+  function handleOpenCariHuruf() {
+    setScreen("cariHuruf");
+  }
+
   function handleBackToStart() {
     setScreen("start");
   }
@@ -45,8 +50,11 @@ export default function App() {
       ) : screen === "abcActivities" ? (
         <AbcActivitiesScreen
           onOpenAlphabet={handleOpenAlphabet}
+          onOpenCariHuruf={handleOpenCariHuruf}
           onBack={handleBackToStart}
         />
+      ) : screen === "cariHuruf" ? (
+        <CariHurufScreen onBack={handleBackToAbcActivities} />
       ) : (
         <MengenalSemuaHurufScreen
           selectedLetter={selectedLetter}

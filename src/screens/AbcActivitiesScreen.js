@@ -1,7 +1,7 @@
 // Displays the activity choices for the Belajar ABC module between StartScreen
 // and the learning activities in src/activities/abc. It receives callbacks for
-// opening MengenalSemuaHurufScreen and going back, then renders one available
-// activity and two coming-soon placeholders.
+// opening the available ABC activities and going back, then renders two
+// available activities and one coming-soon placeholder.
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 // Keeping the activity descriptions together makes the screen easy to extend
@@ -16,10 +16,10 @@ const ACTIVITIES = [
   },
   {
     id: "game1",
-    title: "Permainan 1",
-    description: "Aktiviti baharu sedang disediakan",
+    title: "Cari Huruf",
+    description: "Cari huruf yang betul",
     emoji: "🎮",
-    status: "comingSoon",
+    status: "available",
   },
   {
     id: "game2",
@@ -71,9 +71,12 @@ function ActivityCard({ activity, onPress }) {
 
 // Props are callbacks supplied by App. They let this screen request a screen
 // transition while App remains responsible for the actual navigation state.
-export default function AbcActivitiesScreen({ onOpenAlphabet, onBack }) {
-  // Placeholder cards share this handler because neither game has real logic
-  // yet. Alert provides a clear response without navigating away.
+export default function AbcActivitiesScreen({
+  onOpenAlphabet,
+  onOpenCariHuruf,
+  onBack,
+}) {
+  // The remaining placeholder uses an alert to respond without navigating.
   function handleComingSoon(activity) {
     Alert.alert("Akan datang", `${activity.title} akan dibuka nanti.`);
   }
@@ -98,9 +101,11 @@ export default function AbcActivitiesScreen({ onOpenAlphabet, onBack }) {
           key={activity.id}
           activity={activity}
           onPress={
-            activity.status === "available"
+            activity.id === "allLetters"
               ? onOpenAlphabet
-              : () => handleComingSoon(activity)
+              : activity.id === "game1"
+                ? onOpenCariHuruf
+                : () => handleComingSoon(activity)
           }
         />
       ))}
