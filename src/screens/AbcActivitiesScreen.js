@@ -1,7 +1,7 @@
 // Displays the activity choices for the Belajar ABC module between StartScreen
 // and the learning activities in src/activities/abc. It receives callbacks for
-// opening the available ABC activities and going back, then renders two
-// available activities and one coming-soon placeholder.
+// opening the available ABC activities and going back, then renders the three
+// available activities.
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 // Keeping the activity descriptions together makes the screen easy to extend
@@ -23,10 +23,10 @@ const ACTIVITIES = [
   },
   {
     id: "game2",
-    title: "Permainan 2",
-    description: "Aktiviti baharu sedang disediakan",
+    title: "Huruf Pertama",
+    description: "Pilih huruf pertama bagi setiap perkataan",
     emoji: "🧩",
-    status: "comingSoon",
+    status: "available",
   },
 ];
 
@@ -74,9 +74,10 @@ function ActivityCard({ activity, onPress }) {
 export default function AbcActivitiesScreen({
   onOpenAlphabet,
   onOpenCariHuruf,
+  onOpenHurufPertama,
   onBack,
 }) {
-  // The remaining placeholder uses an alert to respond without navigating.
+  // This fallback keeps an unexpected future card from navigating incorrectly.
   function handleComingSoon(activity) {
     Alert.alert("Akan datang", `${activity.title} akan dibuka nanti.`);
   }
@@ -105,7 +106,9 @@ export default function AbcActivitiesScreen({
               ? onOpenAlphabet
               : activity.id === "game1"
                 ? onOpenCariHuruf
-                : () => handleComingSoon(activity)
+                : activity.id === "game2"
+                  ? onOpenHurufPertama
+                  : () => handleComingSoon(activity)
           }
         />
       ))}
@@ -113,8 +116,8 @@ export default function AbcActivitiesScreen({
   );
 }
 
-// StyleSheet groups reusable React Native styles. Coming-soon styles make the
-// unavailable choices visibly different while keeping every card tappable.
+// StyleSheet groups reusable React Native styles. The coming-soon styles remain
+// available for future activities that are added before their content is ready.
 const styles = StyleSheet.create({
   container: {
     backgroundColor: "#ecfdf5",
