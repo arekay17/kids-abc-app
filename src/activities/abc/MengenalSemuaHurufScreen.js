@@ -5,7 +5,14 @@
 // going back; shared LETTERS data fills the grid and selected-letter details.
 import { useRef } from "react";
 import { useAudioPlayer } from "expo-audio";
-import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  Animated,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 // These project imports reuse the individual letter button and shared letter
 // data plus its matching static audio assets.
 import LetterButton from "../../components/LetterButton";
@@ -25,6 +32,79 @@ export default function MengenalSemuaHurufScreen({
   const letterPlayer = useAudioPlayer(null);
   const loadedLetter = useRef(null);
   const playbackRequest = useRef(0);
+  const selectionAnimation = useRef(null);
+  const letterScale = useRef(new Animated.Value(1)).current;
+  const emojiTranslateY = useRef(new Animated.Value(0)).current;
+  const cardScale = useRef(new Animated.Value(1)).current;
+  const wordOpacity = useRef(new Animated.Value(1)).current;
+
+  function resetAnimationValues() {
+    letterScale.setValue(1);
+    emojiTranslateY.setValue(0);
+    cardScale.setValue(1);
+    wordOpacity.setValue(1);
+  }
+
+  function runSelectionAnimation() {
+    // Stop the previous group before resetting so rapid taps always begin from
+    // known values and cannot leave an element between its resting positions.
+    selectionAnimation.current?.stop();
+    resetAnimationValues();
+    wordOpacity.setValue(0);
+
+    const animation = Animated.parallel([
+      Animated.sequence([
+        Animated.timing(letterScale, {
+          toValue: 1.15,
+          duration: 160,
+          useNativeDriver: true,
+        }),
+        Animated.timing(letterScale, {
+          toValue: 1,
+          duration: 160,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.sequence([
+        Animated.timing(emojiTranslateY, {
+          toValue: -9,
+          duration: 160,
+          useNativeDriver: true,
+        }),
+        Animated.timing(emojiTranslateY, {
+          toValue: 0,
+          duration: 180,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.sequence([
+        Animated.timing(cardScale, {
+          toValue: 1.025,
+          duration: 170,
+          useNativeDriver: true,
+        }),
+        Animated.timing(cardScale, {
+          toValue: 1,
+          duration: 170,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.timing(wordOpacity, {
+        toValue: 1,
+        duration: 220,
+        useNativeDriver: true,
+      }),
+    ]);
+
+    selectionAnimation.current = animation;
+    animation.start(() => {
+      // Ignore a stopped animation's callback if a newer tap has replaced it.
+      if (selectionAnimation.current === animation) {
+        resetAnimationValues();
+        selectionAnimation.current = null;
+      }
+    });
+  }
 
   async function playLetterSound(letter) {
     const requestId = playbackRequest.current + 1;
@@ -55,6 +135,7 @@ export default function MengenalSemuaHurufScreen({
     // Keep the visual update independent so an audio failure never prevents
     // the selected letter, word, and emoji from changing.
     onSelectLetter(item);
+    runSelectionAnimation();
     void playLetterSound(item.letter);
   }
 
@@ -83,11 +164,29 @@ export default function MengenalSemuaHurufScreen({
 
       {/* Selected-letter display updates whenever the selectedLetter prop
           changes and React renders this component again. */}
-      <View style={styles.detailCard}>
-        <Text style={styles.emoji}>{selectedLetter.emoji}</Text>
-        <Text style={styles.bigLetter}>{selectedLetter.letter}</Text>
-        <Text style={styles.word}>{selectedLetter.word}</Text>
-      </View>
+      <Animated.View
+        style={[
+          styles.detailCard,
+          { transform: [{ scale: cardScale }] },
+        ]}
+      >
+        <Animated.Text
+          style={[
+            styles.emoji,
+            { transform: [{ translateY: emojiTranslateY }] },
+          ]}
+        >
+          {selectedLetter.emoji}
+        </Animated.Text>
+        <Animated.Text
+          style={[styles.bigLetter, { transform: [{ scale: letterScale }] }]}
+        >
+          {selectedLetter.letter}
+        </Animated.Text>
+        <Animated.Text style={[styles.word, { opacity: wordOpacity }]}>
+          {selectedLetter.word}
+        </Animated.Text>
+      </Animated.View>
 
       {/* Alphabet grid: FlatList efficiently renders the LETTERS data in four
           columns. keyExtractor gives every item a stable key so React can track
