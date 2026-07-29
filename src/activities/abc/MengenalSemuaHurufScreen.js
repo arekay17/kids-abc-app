@@ -2,12 +2,14 @@
 // activities menu. This learning screen now lives in src/activities/abc so it
 // is kept separate from screens that mainly provide navigation choices.
 // App supplies the selected letter plus callbacks for selecting a letter and
-// going back; shared LETTERS data fills the grid, and the screen shows details
-// for the current selection above that grid.
+// going back; shared LETTERS data fills the grid and selected-letter details.
+import { useRef } from "react";
+import { useAudioPlayer } from "expo-audio";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
-// These project imports reuse the individual letter button and the single
-// source of alphabet data shared by the app.
+// These project imports reuse the individual letter button and shared letter
+// data plus its matching static audio assets.
 import LetterButton from "../../components/LetterButton";
+import { LETTER_AUDIO } from "../../data/letterAudio";
 import { LETTERS } from "../../data/letters";
 
 // Props let the parent keep control of state and navigation. selectedLetter is
@@ -18,10 +20,60 @@ export default function MengenalSemuaHurufScreen({
   onSelectLetter,
   onBack,
 }) {
+  // One hook-managed player prevents sounds from overlapping and releases its
+  // native resources automatically when this screen unmounts.
+  const letterPlayer = useAudioPlayer(null);
+  const loadedLetter = useRef(null);
+  const playbackRequest = useRef(0);
+
+  async function playLetterSound(letter) {
+    const requestId = playbackRequest.current + 1;
+    playbackRequest.current = requestId;
+
+    try {
+      // Pause before seeking or replacing so only the newest sound can play.
+      letterPlayer.pause();
+
+      if (loadedLetter.current === letter) {
+        await letterPlayer.seekTo(0);
+      } else {
+        letterPlayer.replace(LETTER_AUDIO[letter]);
+        loadedLetter.current = letter;
+      }
+
+      // A newer tap may arrive while seekTo is finishing. Only the latest
+      // request is allowed to start playback.
+      if (playbackRequest.current === requestId) {
+        letterPlayer.play();
+      }
+    } catch (error) {
+      console.warn(`Tidak dapat memainkan audio huruf ${letter}.`, error);
+    }
+  }
+
+  function handleSelectLetter(item) {
+    // Keep the visual update independent so an audio failure never prevents
+    // the selected letter, word, and emoji from changing.
+    onSelectLetter(item);
+    void playLetterSound(item.letter);
+  }
+
+  function handleBack() {
+    playbackRequest.current += 1;
+
+    try {
+      letterPlayer.pause();
+    } catch (error) {
+      console.warn("Tidak dapat menghentikan audio huruf.", error);
+    }
+
+    onBack();
+  }
+
   return (
     <View style={styles.container}>
       {/* Navigation control: tapping it calls the parent's back callback. */}
-      <Pressable onPress={onBack} style={styles.backButton}>
+      <Pressable onPress={handleBack} style={styles.backButton}>
         <Text style={styles.backText}>← Kembali</Text>
       </Pressable>
 
@@ -49,7 +101,7 @@ export default function MengenalSemuaHurufScreen({
           <LetterButton
             item={item}
             isSelected={selectedLetter.letter === item.letter}
-            onPress={onSelectLetter}
+            onPress={handleSelectLetter}
           />
         )}
       />
