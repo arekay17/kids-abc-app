@@ -7,6 +7,7 @@ import AbcActivitiesScreen from "./src/screens/AbcActivitiesScreen";
 import MengenalSemuaHurufScreen from "./src/activities/abc/MengenalSemuaHurufScreen";
 import CariHurufScreen from "./src/activities/abc/CariHurufScreen";
 import HurufPertamaScreen from "./src/activities/abc/HurufPertamaScreen";
+import PadankanHurufScreen from "./src/activities/abc/PadankanHurufScreen";
 import { LETTERS } from "./src/data/letters";
 
 export default function App() {
@@ -40,6 +41,10 @@ export default function App() {
     setScreen("hurufPertama");
   }
 
+  function handleOpenPadankanHuruf() {
+    setScreen("padankanHuruf");
+  }
+
   function handleBackToStart() {
     setScreen("start");
   }
@@ -61,12 +66,15 @@ export default function App() {
             onOpenAlphabet={handleOpenAlphabet}
             onOpenCariHuruf={handleOpenCariHuruf}
             onOpenHurufPertama={handleOpenHurufPertama}
+            onOpenPadankanHuruf={handleOpenPadankanHuruf}
             onBack={handleBackToStart}
           />
         ) : screen === "cariHuruf" ? (
           <CariHurufScreen onBack={handleBackToAbcActivities} />
         ) : screen === "hurufPertama" ? (
           <HurufPertamaScreen onBack={handleBackToAbcActivities} />
+        ) : screen === "padankanHuruf" ? (
+          <PadankanHurufScreen onBack={handleBackToAbcActivities} />
         ) : (
           <MengenalSemuaHurufScreen
             selectedLetter={selectedLetter}

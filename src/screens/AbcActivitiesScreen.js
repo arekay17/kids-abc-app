@@ -1,12 +1,19 @@
 // Displays the activity choices for the Belajar ABC module between StartScreen
 // and the learning activities in src/activities/abc. It receives callbacks for
-// opening the available ABC activities and going back, then renders the three
+// opening the available ABC activities and going back, then renders the four
 // available activities.
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 // Keeping the activity descriptions together makes the screen easy to extend
-// later. The available item has an action callback; placeholder items do not.
+// later. Available items have action callbacks; placeholder items do not.
 const ACTIVITIES = [
   {
     id: "allLetters",
@@ -29,9 +36,16 @@ const ACTIVITIES = [
     emoji: "🧩",
     status: "available",
   },
+  {
+    id: "matchCase",
+    title: "Padankan Huruf Besar & Huruf Kecil",
+    description: "Padankan huruf besar dengan huruf kecil",
+    emoji: "🔠",
+    status: "available",
+  },
 ];
 
-// This small child component avoids repeating the same card JSX three times.
+// This small child component avoids repeating the same card JSX four times.
 // Its props control the displayed activity, its visual state, and what happens
 // when the learner taps it.
 function ActivityCard({ activity, onPress }) {
@@ -76,6 +90,7 @@ export default function AbcActivitiesScreen({
   onOpenAlphabet,
   onOpenCariHuruf,
   onOpenHurufPertama,
+  onOpenPadankanHuruf,
   onBack,
 }) {
   // This fallback keeps an unexpected future card from navigating incorrectly.
@@ -89,36 +104,38 @@ export default function AbcActivitiesScreen({
       style={styles.safeArea}
     >
       <ScrollView contentContainerStyle={styles.container}>
-      {/* Navigation control returns from this menu to the main module list. */}
-      <Pressable onPress={onBack} style={styles.backButton}>
-        <Text style={styles.backText}>← Kembali</Text>
-      </Pressable>
+        {/* Navigation control returns from this menu to the main module list. */}
+        <Pressable onPress={onBack} style={styles.backButton}>
+          <Text style={styles.backText}>← Kembali</Text>
+        </Pressable>
 
       {/* Screen header tells the learner which module is open and what to do. */}
-      <View style={styles.headerCard}>
-        <Text style={styles.title}>Belajar ABC</Text>
-        <Text style={styles.subtitle}>Pilih aktiviti</Text>
-      </View>
+        <View style={styles.headerCard}>
+          <Text style={styles.title}>Belajar ABC</Text>
+          <Text style={styles.subtitle}>Pilih aktiviti</Text>
+        </View>
 
       {/* Activity list: map renders one card for each data item. The key gives
           React a stable identity for each card between renders. */}
-      <View style={styles.activityGrid}>
-        {ACTIVITIES.map((activity) => (
-          <ActivityCard
-            key={activity.id}
-            activity={activity}
-            onPress={
-              activity.id === "allLetters"
-                ? onOpenAlphabet
-                : activity.id === "game1"
-                  ? onOpenCariHuruf
-                  : activity.id === "game2"
-                    ? onOpenHurufPertama
-                    : () => handleComingSoon(activity)
-            }
-          />
-        ))}
-      </View>
+        <View style={styles.activityGrid}>
+          {ACTIVITIES.map((activity) => (
+            <ActivityCard
+              key={activity.id}
+              activity={activity}
+              onPress={
+                activity.id === "allLetters"
+                  ? onOpenAlphabet
+                  : activity.id === "game1"
+                    ? onOpenCariHuruf
+                    : activity.id === "game2"
+                      ? onOpenHurufPertama
+                      : activity.id === "matchCase"
+                        ? onOpenPadankanHuruf
+                        : () => handleComingSoon(activity)
+              }
+            />
+          ))}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
