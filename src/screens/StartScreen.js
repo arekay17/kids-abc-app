@@ -8,6 +8,7 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 // Imports from other project files reuse the module-card UI and shared data
 // instead of defining either one again inside this screen.
 import ModuleCard from "../components/ModuleCard";
@@ -20,7 +21,11 @@ export default function StartScreen({ onOpenModule }) {
   const isTablet = width >= 1000;
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <SafeAreaView
+      edges={["top", "left", "right", "bottom"]}
+      style={styles.safeArea}
+    >
+      <ScrollView contentContainerStyle={styles.container}>
       {/* Screen header introduces the app and tells the learner what to do. */}
       <View style={styles.heroCard}>
         <Text style={styles.appTitle}>Belajar Bahasa Melayu</Text>
@@ -39,7 +44,8 @@ export default function StartScreen({ onOpenModule }) {
           />
         ))}
       </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -47,6 +53,10 @@ export default function StartScreen({ onOpenModule }) {
 // ScrollView receives container through contentContainerStyle so its entire
 // scrollable content gets the background and spacing.
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#ecfdf5",
+  },
   container: {
     backgroundColor: "#ecfdf5",
     flexGrow: 1,

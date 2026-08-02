@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Alert, SafeAreaView, StyleSheet } from "react-native";
+import { Alert, StyleSheet, View } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import StartScreen from "./src/screens/StartScreen";
 import AbcActivitiesScreen from "./src/screens/AbcActivitiesScreen";
 import MengenalSemuaHurufScreen from "./src/activities/abc/MengenalSemuaHurufScreen";
@@ -47,30 +48,32 @@ export default function App() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Conditional rendering displays one screen for the current state.
-          The nested condition keeps the app's simple state-based navigation. */}
-      {screen === "start" ? (
-        <StartScreen onOpenModule={handleOpenModule} />
-      ) : screen === "abcActivities" ? (
-        <AbcActivitiesScreen
-          onOpenAlphabet={handleOpenAlphabet}
-          onOpenCariHuruf={handleOpenCariHuruf}
-          onOpenHurufPertama={handleOpenHurufPertama}
-          onBack={handleBackToStart}
-        />
-      ) : screen === "cariHuruf" ? (
-        <CariHurufScreen onBack={handleBackToAbcActivities} />
-      ) : screen === "hurufPertama" ? (
-        <HurufPertamaScreen onBack={handleBackToAbcActivities} />
-      ) : (
-        <MengenalSemuaHurufScreen
-          selectedLetter={selectedLetter}
-          onSelectLetter={setSelectedLetter}
-          onBack={handleBackToAbcActivities}
-        />
-      )}
-    </SafeAreaView>
+    <SafeAreaProvider>
+      <View style={styles.container}>
+        {/* Conditional rendering displays one screen for the current state.
+            The nested condition keeps the app's simple state-based navigation. */}
+        {screen === "start" ? (
+          <StartScreen onOpenModule={handleOpenModule} />
+        ) : screen === "abcActivities" ? (
+          <AbcActivitiesScreen
+            onOpenAlphabet={handleOpenAlphabet}
+            onOpenCariHuruf={handleOpenCariHuruf}
+            onOpenHurufPertama={handleOpenHurufPertama}
+            onBack={handleBackToStart}
+          />
+        ) : screen === "cariHuruf" ? (
+          <CariHurufScreen onBack={handleBackToAbcActivities} />
+        ) : screen === "hurufPertama" ? (
+          <HurufPertamaScreen onBack={handleBackToAbcActivities} />
+        ) : (
+          <MengenalSemuaHurufScreen
+            selectedLetter={selectedLetter}
+            onSelectLetter={setSelectedLetter}
+            onBack={handleBackToAbcActivities}
+          />
+        )}
+      </View>
+    </SafeAreaProvider>
   );
 }
 

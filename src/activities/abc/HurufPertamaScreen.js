@@ -7,6 +7,7 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { LETTERS } from "../../data/letters";
 
 const TOTAL_ROUNDS = 5;
@@ -122,7 +123,13 @@ export default function HurufPertamaScreen({ onBack }) {
 
   if (isFinished) {
     return (
-      <ScrollView contentContainerStyle={[styles.container, styles.resultContainer]}>
+      <SafeAreaView
+        edges={["top", "left", "right", "bottom"]}
+        style={styles.safeArea}
+      >
+        <ScrollView
+          contentContainerStyle={[styles.container, styles.resultContainer]}
+        >
         <Text style={styles.resultEmoji}>🎉</Text>
         <Text style={styles.resultTitle}>Tahniah!</Text>
         <Text style={styles.resultScore}>
@@ -135,12 +142,17 @@ export default function HurufPertamaScreen({ onBack }) {
         <Pressable onPress={handleBack} style={styles.secondaryButton}>
           <Text style={styles.secondaryButtonText}>Kembali ke Aktiviti ABC</Text>
         </Pressable>
-      </ScrollView>
+        </ScrollView>
+      </SafeAreaView>
     );
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <SafeAreaView
+      edges={["top", "left", "right", "bottom"]}
+      style={styles.safeArea}
+    >
+      <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.header}>
         <View style={styles.titleRow}>
           <Pressable onPress={handleBack} style={styles.backButton}>
@@ -213,11 +225,16 @@ export default function HurufPertamaScreen({ onBack }) {
           </Text>
         </View>
       </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#ecfdf5",
+  },
   container: {
     flexGrow: 1,
     backgroundColor: "#ecfdf5",

@@ -14,6 +14,7 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 // These project imports reuse the individual letter button and shared letter
 // data plus its matching static audio assets.
 import LetterButton from "../../components/LetterButton";
@@ -161,7 +162,10 @@ export default function MengenalSemuaHurufScreen({
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView
+      edges={["top", "left", "right", "bottom"]}
+      style={styles.container}
+    >
       <View style={styles.topBar}>
         <Pressable onPress={handleBack} style={styles.backButton}>
           <Text style={styles.backText}>← Kembali</Text>
@@ -240,7 +244,7 @@ export default function MengenalSemuaHurufScreen({
           />
         </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 

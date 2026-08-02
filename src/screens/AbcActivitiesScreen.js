@@ -3,6 +3,7 @@
 // opening the available ABC activities and going back, then renders the three
 // available activities.
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 // Keeping the activity descriptions together makes the screen easy to extend
 // later. The available item has an action callback; placeholder items do not.
@@ -83,7 +84,11 @@ export default function AbcActivitiesScreen({
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <SafeAreaView
+      edges={["top", "left", "right", "bottom"]}
+      style={styles.safeArea}
+    >
+      <ScrollView contentContainerStyle={styles.container}>
       {/* Navigation control returns from this menu to the main module list. */}
       <Pressable onPress={onBack} style={styles.backButton}>
         <Text style={styles.backText}>← Kembali</Text>
@@ -114,13 +119,18 @@ export default function AbcActivitiesScreen({
           />
         ))}
       </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 // StyleSheet groups reusable React Native styles. The coming-soon styles remain
 // available for future activities that are added before their content is ready.
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#ecfdf5",
+  },
   container: {
     backgroundColor: "#ecfdf5",
     flexGrow: 1,
