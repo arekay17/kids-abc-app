@@ -11,6 +11,7 @@ import {
   Pressable,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from "react-native";
 // These project imports reuse the individual letter button and shared letter
@@ -27,6 +28,14 @@ export default function MengenalSemuaHurufScreen({
   onSelectLetter,
   onBack,
 }) {
+  const { width, height } = useWindowDimensions();
+  const isShort = height < 390;
+  const gridWidth = Math.min(width * 0.58, 620);
+  const columns = width >= 1050 ? 9 : 7;
+  const buttonSize = Math.max(
+    44,
+    Math.min(isShort ? 52 : 60, Math.floor(gridWidth / columns) - 8),
+  );
   // One hook-managed player prevents sounds from overlapping and releases its
   // native resources automatically when this screen unmounts.
   const letterPlayer = useAudioPlayer(null);
@@ -153,57 +162,84 @@ export default function MengenalSemuaHurufScreen({
 
   return (
     <View style={styles.container}>
-      {/* Navigation control: tapping it calls the parent's back callback. */}
-      <Pressable onPress={handleBack} style={styles.backButton}>
-        <Text style={styles.backText}>← Kembali</Text>
-      </Pressable>
+      <View style={styles.topBar}>
+        <Pressable onPress={handleBack} style={styles.backButton}>
+          <Text style={styles.backText}>← Kembali</Text>
+        </Pressable>
+        <View style={styles.heading}>
+          <Text style={[styles.title, isShort && styles.shortTitle]}>
+            Belajar ABC
+          </Text>
+          <Text style={styles.subtitle}>Bahasa Melayu</Text>
+        </View>
+        <View style={styles.backButtonSpacer} />
+      </View>
 
-      {/* Screen header identifies the lesson and language. */}
-      <Text style={styles.title}>Belajar ABC</Text>
-      <Text style={styles.subtitle}>Bahasa Melayu</Text>
+      {/* Both learning areas remain visible together across landscape sizes. */}
+      <View style={styles.landscapeContent}>
 
-      {/* Selected-letter display updates whenever the selectedLetter prop
+        {/* Selected-letter display updates whenever the selectedLetter prop
           changes and React renders this component again. */}
-      <Animated.View
+        <Animated.View
         style={[
           styles.detailCard,
+          isShort && styles.shortDetailCard,
           { transform: [{ scale: cardScale }] },
         ]}
       >
         <Animated.Text
           style={[
             styles.emoji,
+            isShort && styles.shortEmoji,
             { transform: [{ translateY: emojiTranslateY }] },
           ]}
         >
           {selectedLetter.emoji}
         </Animated.Text>
         <Animated.Text
-          style={[styles.bigLetter, { transform: [{ scale: letterScale }] }]}
+          style={[
+            styles.bigLetter,
+            isShort && styles.shortBigLetter,
+            { transform: [{ scale: letterScale }] },
+          ]}
         >
           {selectedLetter.letter}
         </Animated.Text>
         <Animated.Text style={[styles.word, { opacity: wordOpacity }]}>
           {selectedLetter.word}
         </Animated.Text>
-      </Animated.View>
+        </Animated.View>
 
-      {/* Alphabet grid: FlatList efficiently renders the LETTERS data in four
-          columns. keyExtractor gives every item a stable key so React can track
+        {/* The responsive grid changes its column count for phones and tablets.
+          keyExtractor gives every item a stable key so React can track
           each button, while renderItem describes the UI for one item. */}
-      <FlatList
-        data={LETTERS}
-        keyExtractor={(item) => item.letter}
-        numColumns={4}
-        contentContainerStyle={styles.grid}
-        renderItem={({ item }) => (
-          <LetterButton
-            item={item}
-            isSelected={selectedLetter.letter === item.letter}
-            onPress={handleSelectLetter}
+        <View
+          style={[
+            styles.gridPanel,
+            isShort && styles.shortGridPanel,
+            { maxWidth: gridWidth + 48 },
+          ]}
+        >
+          <FlatList
+            style={styles.gridList}
+            data={LETTERS}
+            keyExtractor={(item) => item.letter}
+            key={columns}
+            numColumns={columns}
+            scrollEnabled={isShort}
+            contentContainerStyle={styles.grid}
+            columnWrapperStyle={styles.gridRow}
+            renderItem={({ item }) => (
+              <LetterButton
+                item={item}
+                isSelected={selectedLetter.letter === item.letter}
+                onPress={handleSelectLetter}
+                size={buttonSize}
+              />
+            )}
           />
-        )}
-      />
+        </View>
+      </View>
     </View>
   );
 }
@@ -214,8 +250,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#ecfdf5",
-    paddingTop: 48,
-    paddingHorizontal: 18,
+    paddingTop: 10,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+  },
+  topBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
   },
   backButton: {
     alignSelf: "flex-start",
@@ -223,7 +265,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 999,
-    marginBottom: 12,
     elevation: 2,
   },
   backText: {
@@ -232,31 +273,49 @@ const styles = StyleSheet.create({
     color: "#14532d",
   },
   title: {
-    fontSize: 36,
+    fontSize: 30,
     fontWeight: "900",
     color: "#14532d",
     textAlign: "center",
   },
   subtitle: {
-    fontSize: 20,
+    fontSize: 17,
     fontWeight: "700",
     color: "#166534",
     textAlign: "center",
-    marginBottom: 18,
+  },
+  shortTitle: {
+    fontSize: 26,
+  },
+  heading: {
+    flex: 1,
+  },
+  backButtonSpacer: {
+    width: 104,
+  },
+  landscapeContent: {
+    flex: 1,
+    flexDirection: "row",
+    gap: 16,
+    justifyContent: "center",
   },
   detailCard: {
+    order: 2,
+    flex: 2,
+    minWidth: 210,
+    maxWidth: 440,
     backgroundColor: "#ffffff",
     borderRadius: 24,
     alignItems: "center",
-    padding: 24,
-    marginBottom: 20,
+    padding: 16,
+    justifyContent: "center",
     elevation: 4,
   },
   emoji: {
-    fontSize: 70,
+    fontSize: 66,
   },
   bigLetter: {
-    fontSize: 78,
+    fontSize: 76,
     fontWeight: "900",
     color: "#16a34a",
   },
@@ -266,7 +325,36 @@ const styles = StyleSheet.create({
     color: "#1f2937",
   },
   grid: {
+    flexGrow: 1,
+    justifyContent: "center",
     alignItems: "center",
-    paddingBottom: 30,
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+  },
+  gridPanel: {
+    order: 1,
+    flex: 3,
+    minWidth: 350,
+    backgroundColor: "#d1fae5",
+    borderRadius: 24,
+    justifyContent: "center",
+  },
+  gridList: {
+    flex: 1,
+  },
+  gridRow: {
+    justifyContent: "center",
+  },
+  shortDetailCard: {
+    padding: 8,
+  },
+  shortGridPanel: {
+    paddingVertical: 2,
+  },
+  shortEmoji: {
+    fontSize: 50,
+  },
+  shortBigLetter: {
+    fontSize: 60,
   },
 });

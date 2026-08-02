@@ -1,5 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { LETTERS } from "../../data/letters";
 
 const TOTAL_ROUNDS = 5;
@@ -43,6 +50,8 @@ function createSession() {
 }
 
 export default function HurufPertamaScreen({ onBack }) {
+  const { height } = useWindowDimensions();
+  const isShort = height < 390;
   const [questions, setQuestions] = useState(createSession);
   const [roundNumber, setRoundNumber] = useState(1);
   const [score, setScore] = useState(0);
@@ -113,7 +122,7 @@ export default function HurufPertamaScreen({ onBack }) {
 
   if (isFinished) {
     return (
-      <View style={[styles.container, styles.resultContainer]}>
+      <ScrollView contentContainerStyle={[styles.container, styles.resultContainer]}>
         <Text style={styles.resultEmoji}>🎉</Text>
         <Text style={styles.resultTitle}>Tahniah!</Text>
         <Text style={styles.resultScore}>
@@ -126,88 +135,100 @@ export default function HurufPertamaScreen({ onBack }) {
         <Pressable onPress={handleBack} style={styles.secondaryButton}>
           <Text style={styles.secondaryButtonText}>Kembali ke Aktiviti ABC</Text>
         </Pressable>
-      </View>
+      </ScrollView>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Pressable onPress={handleBack} style={styles.backButton}>
-        <Text style={styles.backText}>← Kembali</Text>
-      </Pressable>
-
-      <Text style={styles.title}>Huruf Pertama</Text>
-
-      <View style={styles.progressRow}>
-        <Text style={styles.progressText}>
-          Soalan {roundNumber} daripada {TOTAL_ROUNDS}
-        </Text>
-        <Text style={styles.progressText}>Skor: {score}</Text>
+    <ScrollView contentContainerStyle={styles.container}>
+      <View style={styles.header}>
+        <View style={styles.titleRow}>
+          <Pressable onPress={handleBack} style={styles.backButton}>
+            <Text style={styles.backText}>← Kembali</Text>
+          </Pressable>
+          <Text style={[styles.title, isShort && styles.shortTitle]}>
+            Huruf Pertama
+          </Text>
+          <View style={styles.backButtonSpacer} />
+        </View>
+        <View style={styles.progressRow}>
+          <Text style={styles.progressText}>
+            Soalan {roundNumber} daripada {TOTAL_ROUNDS}
+          </Text>
+          <Text style={styles.progressText}>Skor: {score}</Text>
+        </View>
       </View>
 
-      <View style={styles.questionCard}>
-        <Text style={styles.emoji}>{currentQuestion.emoji}</Text>
-        <Text style={styles.word}>{currentQuestion.word}</Text>
-        <Text style={styles.instruction}>
-          Apakah huruf pertama bagi {currentQuestion.word}?
-        </Text>
+      <View style={styles.mainRow}>
+        <View style={styles.questionCard}>
+          <Text style={styles.emoji}>{currentQuestion.emoji}</Text>
+          <Text style={styles.word}>{currentQuestion.word}</Text>
+          <Text style={styles.instruction}>
+            Apakah huruf pertama bagi {currentQuestion.word}?
+          </Text>
+        </View>
+
+        <View style={styles.answerArea}>
+          <View style={styles.choices}>
+            {currentQuestion.choices.map((choice) => {
+              const isCorrect =
+                selectedChoice === choice && choice === currentQuestion.letter;
+              const isIncorrect =
+                selectedChoice === choice && choice !== currentQuestion.letter;
+
+              return (
+                <Pressable
+                  key={choice}
+                  disabled={isTransitioning}
+                  onPress={() => handleAnswer(choice)}
+                  style={({ pressed }) => [
+                    styles.choiceButton,
+                    isCorrect && styles.correctChoice,
+                    isIncorrect && styles.incorrectChoice,
+                    pressed && !isTransitioning && styles.pressedChoice,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.choiceText,
+                      (isCorrect || isIncorrect) && styles.selectedChoiceText,
+                    ]}
+                  >
+                    {choice}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          <Text
+            style={[
+              styles.feedback,
+              feedback === "Betul!"
+                ? styles.correctFeedback
+                : styles.tryFeedback,
+            ]}
+          >
+            {feedback || " "}
+          </Text>
+        </View>
       </View>
-
-      <View style={styles.choices}>
-        {currentQuestion.choices.map((choice) => {
-          const isCorrect =
-            selectedChoice === choice && choice === currentQuestion.letter;
-          const isIncorrect =
-            selectedChoice === choice && choice !== currentQuestion.letter;
-
-          return (
-            <Pressable
-              key={choice}
-              disabled={isTransitioning}
-              onPress={() => handleAnswer(choice)}
-              style={({ pressed }) => [
-                styles.choiceButton,
-                isCorrect && styles.correctChoice,
-                isIncorrect && styles.incorrectChoice,
-                pressed && !isTransitioning && styles.pressedChoice,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.choiceText,
-                  (isCorrect || isIncorrect) && styles.selectedChoiceText,
-                ]}
-              >
-                {choice}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
-
-      <Text
-        style={[
-          styles.feedback,
-          feedback === "Betul!" ? styles.correctFeedback : styles.tryFeedback,
-        ]}
-      >
-        {feedback || " "}
-      </Text>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     backgroundColor: "#ecfdf5",
-    paddingTop: 48,
+    paddingTop: 12,
     paddingHorizontal: 18,
+    paddingBottom: 14,
   },
   resultContainer: {
     alignItems: "center",
     justifyContent: "center",
-    paddingBottom: 48,
+    paddingVertical: 24,
   },
   backButton: {
     alignSelf: "flex-start",
@@ -215,7 +236,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 999,
-    marginBottom: 12,
     elevation: 2,
   },
   backText: {
@@ -224,16 +244,35 @@ const styles = StyleSheet.create({
     color: "#14532d",
   },
   title: {
-    fontSize: 36,
+    flex: 1,
+    fontSize: 32,
     fontWeight: "900",
     color: "#14532d",
     textAlign: "center",
-    marginBottom: 18,
+  },
+  shortTitle: {
+    fontSize: 27,
+  },
+  header: {
+    marginBottom: 10,
+  },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  backButtonSpacer: {
+    width: 104,
+  },
+  mainRow: {
+    flex: 1,
+    flexDirection: "row",
+    gap: 22,
+    alignItems: "stretch",
   },
   progressRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 18,
+    marginBottom: 10,
   },
   progressText: {
     fontSize: 16,
@@ -241,18 +280,24 @@ const styles = StyleSheet.create({
     color: "#166534",
   },
   questionCard: {
+    flex: 1,
     backgroundColor: "#ffffff",
     borderRadius: 24,
     alignItems: "center",
-    padding: 20,
-    marginBottom: 24,
+    justifyContent: "center",
+    padding: 14,
     elevation: 4,
   },
+  answerArea: {
+    flex: 1,
+    minWidth: 0,
+    justifyContent: "center",
+  },
   emoji: {
-    fontSize: 62,
+    fontSize: 56,
   },
   word: {
-    fontSize: 31,
+    fontSize: 29,
     fontWeight: "900",
     color: "#16a34a",
     marginTop: 4,
@@ -262,16 +307,17 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: "#1f2937",
     textAlign: "center",
-    marginTop: 12,
+    marginTop: 8,
   },
   choices: {
     flexDirection: "row",
     justifyContent: "space-between",
+    gap: 12,
   },
   choiceButton: {
-    width: "30%",
+    flex: 1,
     aspectRatio: 1,
-    maxHeight: 110,
+    maxHeight: 130,
     borderRadius: 24,
     backgroundColor: "#ffffff",
     alignItems: "center",
@@ -300,7 +346,7 @@ const styles = StyleSheet.create({
     fontSize: 26,
     fontWeight: "900",
     textAlign: "center",
-    marginTop: 22,
+    marginTop: 16,
   },
   correctFeedback: {
     color: "#15803d",
@@ -325,7 +371,8 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   primaryButton: {
-    width: "100%",
+    width: "70%",
+    maxWidth: 520,
     backgroundColor: "#16a34a",
     borderRadius: 18,
     paddingVertical: 16,
@@ -338,7 +385,8 @@ const styles = StyleSheet.create({
     color: "#ffffff",
   },
   secondaryButton: {
-    width: "100%",
+    width: "70%",
+    maxWidth: 520,
     backgroundColor: "#ffffff",
     borderRadius: 18,
     paddingVertical: 16,

@@ -5,7 +5,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 // Props come from StartScreen: module supplies the content, while onPress lets
 // this child component tell its parent which module the learner tapped.
-export default function ModuleCard({ module, onPress }) {
+export default function ModuleCard({ module, onPress, style }) {
   // These derived values are calculated from props on every render. They do not
   // need state because they can always be recreated from the module data.
   const progressPercent = Math.round(module.progress * 100);
@@ -18,6 +18,7 @@ export default function ModuleCard({ module, onPress }) {
       onPress={() => onPress(module)}
       style={({ pressed }) => [
         styles.card,
+        style,
         pressed && !isComingSoon && styles.pressed,
         isComingSoon && styles.disabledCard,
       ]}
@@ -56,7 +57,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffffff",
     borderRadius: 22,
     padding: 18,
-    marginBottom: 16,
     elevation: 4,
   },
   pressed: {

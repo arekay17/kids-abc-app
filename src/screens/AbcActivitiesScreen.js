@@ -97,21 +97,23 @@ export default function AbcActivitiesScreen({
 
       {/* Activity list: map renders one card for each data item. The key gives
           React a stable identity for each card between renders. */}
-      {ACTIVITIES.map((activity) => (
-        <ActivityCard
-          key={activity.id}
-          activity={activity}
-          onPress={
-            activity.id === "allLetters"
-              ? onOpenAlphabet
-              : activity.id === "game1"
-                ? onOpenCariHuruf
-                : activity.id === "game2"
-                  ? onOpenHurufPertama
-                  : () => handleComingSoon(activity)
-          }
-        />
-      ))}
+      <View style={styles.activityGrid}>
+        {ACTIVITIES.map((activity) => (
+          <ActivityCard
+            key={activity.id}
+            activity={activity}
+            onPress={
+              activity.id === "allLetters"
+                ? onOpenAlphabet
+                : activity.id === "game1"
+                  ? onOpenCariHuruf
+                  : activity.id === "game2"
+                    ? onOpenHurufPertama
+                    : () => handleComingSoon(activity)
+            }
+          />
+        ))}
+      </View>
     </ScrollView>
   );
 }
@@ -121,7 +123,8 @@ export default function AbcActivitiesScreen({
 const styles = StyleSheet.create({
   container: {
     backgroundColor: "#ecfdf5",
-    paddingTop: 48,
+    flexGrow: 1,
+    paddingTop: 16,
     paddingHorizontal: 18,
     paddingBottom: 30,
   },
@@ -131,7 +134,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 999,
-    marginBottom: 16,
+    marginBottom: 10,
     elevation: 2,
   },
   backText: {
@@ -142,8 +145,9 @@ const styles = StyleSheet.create({
   headerCard: {
     backgroundColor: "#16a34a",
     borderRadius: 28,
-    padding: 24,
-    marginBottom: 22,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    marginBottom: 16,
     alignItems: "center",
     elevation: 5,
   },
@@ -163,8 +167,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffffff",
     borderRadius: 22,
     padding: 18,
-    marginBottom: 16,
-    flexDirection: "row",
+    flexGrow: 1,
+    flexBasis: 220,
+    maxWidth: 390,
+    minHeight: 145,
+    flexDirection: "column",
     alignItems: "center",
     elevation: 4,
   },
@@ -177,15 +184,17 @@ const styles = StyleSheet.create({
   },
   activityEmoji: {
     fontSize: 42,
-    marginRight: 16,
+    marginBottom: 8,
   },
   activityText: {
     flex: 1,
+    alignItems: "center",
   },
   activityTitle: {
     fontSize: 21,
     fontWeight: "900",
     color: "#14532d",
+    textAlign: "center",
   },
   comingSoonTitle: {
     color: "#4b5563",
@@ -195,6 +204,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#6b7280",
     marginTop: 5,
+    textAlign: "center",
   },
   comingSoonBadge: {
     alignSelf: "flex-start",
@@ -206,5 +216,11 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: 999,
     marginTop: 10,
+  },
+  activityGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 16,
   },
 });
