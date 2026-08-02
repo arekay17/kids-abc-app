@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { StatusBar } from "expo-status-bar";
 import { Alert, StyleSheet, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import StartScreen from "./src/screens/StartScreen";
@@ -49,6 +50,7 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
+      <StatusBar hidden />
       <View style={styles.container}>
         {/* Conditional rendering displays one screen for the current state.
             The nested condition keeps the app's simple state-based navigation. */}
