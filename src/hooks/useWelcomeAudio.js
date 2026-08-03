@@ -233,7 +233,6 @@ export default function useWelcomeAudio() {
     if (!voiceStatus.didJustFinish || greetingCompleted.current) return;
 
     greetingCompleted.current = true;
-    void voicePlayer.seekTo(0).catch(() => undefined);
 
     if (soundEnabled.current && !isLeaving.current) {
       void fadeMusicTo(
