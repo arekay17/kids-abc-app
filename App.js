@@ -2,6 +2,7 @@ import { useState } from "react";
 import { StatusBar } from "expo-status-bar";
 import { Alert, StyleSheet, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import WelcomeScreen from "./src/screens/WelcomeScreen";
 import StartScreen from "./src/screens/StartScreen";
 import AbcActivitiesScreen from "./src/screens/AbcActivitiesScreen";
 import MengenalSemuaHurufScreen from "./src/activities/abc/MengenalSemuaHurufScreen";
@@ -13,8 +14,14 @@ import { LETTERS } from "./src/data/letters";
 export default function App() {
   // This state acts as a small navigation system. Changing its value makes
   // React render the matching screen below without needing a navigation library.
-  const [screen, setScreen] = useState("start");
+  const [screen, setScreen] = useState("welcome");
   const [selectedLetter, setSelectedLetter] = useState(LETTERS[0]);
+
+  // WelcomeScreen calls this once the child is ready to see the existing
+  // module list. The rest of the app's screen flow stays unchanged.
+  function handleStartLearning() {
+    setScreen("start");
+  }
 
   // StartScreen passes the chosen module here. The ABC module now opens its
   // activity menu first; modules that are not ready still show a message.
@@ -59,7 +66,9 @@ export default function App() {
       <View style={styles.container}>
         {/* Conditional rendering displays one screen for the current state.
             The nested condition keeps the app's simple state-based navigation. */}
-        {screen === "start" ? (
+        {screen === "welcome" ? (
+          <WelcomeScreen onStart={handleStartLearning} />
+        ) : screen === "start" ? (
           <StartScreen onOpenModule={handleOpenModule} />
         ) : screen === "abcActivities" ? (
           <AbcActivitiesScreen
