@@ -26,7 +26,8 @@ export default function WelcomeScreen({ onStart }) {
   const entranceOpacity = useRef(new Animated.Value(0)).current;
   const entranceY = useRef(new Animated.Value(32)).current;
   const idleY = useRef(new Animated.Value(0)).current;
-  const mascotScale = useRef(new Animated.Value(0.9)).current;
+  const entranceScale = useRef(new Animated.Value(0.9)).current;
+  const idleScale = useRef(new Animated.Value(1)).current;
   const mascotRotation = useRef(new Animated.Value(0)).current;
   const buttonOpacity = useRef(new Animated.Value(0)).current;
   const buttonScale = useRef(new Animated.Value(0.94)).current;
@@ -51,7 +52,7 @@ export default function WelcomeScreen({ onStart }) {
         easing: Easing.out(Easing.back(1.15)),
         useNativeDriver: true,
       }),
-      Animated.timing(mascotScale, {
+      Animated.timing(entranceScale, {
         toValue: 1,
         duration: 650,
         easing: Easing.out(Easing.back(1.15)),
@@ -114,43 +115,57 @@ export default function WelcomeScreen({ onStart }) {
         // Phase three combines a slow float, tiny tilt, and breathing-like pulse.
         // It starts only after the greeting, so there can never be two loops.
         idleAnimation.current = Animated.loop(
-          Animated.sequence([
-            Animated.parallel([
+          Animated.parallel([
+            Animated.sequence([
               Animated.timing(idleY, {
                 toValue: -8,
                 duration: 1100,
                 easing: Easing.inOut(Easing.sin),
                 useNativeDriver: true,
               }),
-              Animated.timing(mascotScale, {
-                toValue: 1.025,
-                duration: 1100,
-                easing: Easing.inOut(Easing.sin),
-                useNativeDriver: true,
-              }),
-              Animated.timing(mascotRotation, {
-                toValue: 1.4,
-                duration: 1100,
-                easing: Easing.inOut(Easing.sin),
-                useNativeDriver: true,
-              }),
-            ]),
-            Animated.parallel([
               Animated.timing(idleY, {
                 toValue: 0,
                 duration: 1100,
                 easing: Easing.inOut(Easing.sin),
                 useNativeDriver: true,
               }),
-              Animated.timing(mascotScale, {
+            ]),
+            Animated.sequence([
+              Animated.timing(idleScale, {
+                toValue: 1.025,
+                duration: 1100,
+                easing: Easing.inOut(Easing.sin),
+                useNativeDriver: true,
+              }),
+              Animated.timing(idleScale, {
                 toValue: 1,
                 duration: 1100,
                 easing: Easing.inOut(Easing.sin),
                 useNativeDriver: true,
               }),
+            ]),
+            Animated.sequence([
               Animated.timing(mascotRotation, {
-                toValue: -1.4,
-                duration: 1100,
+                toValue: 1.2,
+                duration: 550,
+                easing: Easing.inOut(Easing.sin),
+                useNativeDriver: true,
+              }),
+              Animated.timing(mascotRotation, {
+                toValue: 0,
+                duration: 550,
+                easing: Easing.inOut(Easing.sin),
+                useNativeDriver: true,
+              }),
+              Animated.timing(mascotRotation, {
+                toValue: -1.2,
+                duration: 550,
+                easing: Easing.inOut(Easing.sin),
+                useNativeDriver: true,
+              }),
+              Animated.timing(mascotRotation, {
+                toValue: 0,
+                duration: 550,
                 easing: Easing.inOut(Easing.sin),
                 useNativeDriver: true,
               }),
@@ -175,10 +190,11 @@ export default function WelcomeScreen({ onStart }) {
     buttonOpacity,
     buttonScale,
     entranceOpacity,
+    entranceScale,
     entranceY,
+    idleScale,
     idleY,
     mascotRotation,
-    mascotScale,
   ]);
 
   function handleStart() {
@@ -221,7 +237,8 @@ export default function WelcomeScreen({ onStart }) {
             style={{
               transform: [
                 { translateY: idleY },
-                { scale: mascotScale },
+                { scale: entranceScale },
+                { scale: idleScale },
                 { rotate: mascotRotate },
               ],
             }}
