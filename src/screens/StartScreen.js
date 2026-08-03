@@ -1,6 +1,11 @@
+import { useCallback, useRef } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   Alert,
+  Animated,
+  Easing,
   Image,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -10,6 +15,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import ModuleCard from "../components/ModuleCard";
 import { MODULES } from "../data/modules";
+import useModuleScreenAudio from "../hooks/useModuleScreenAudio";
 
 const POINTING_MASCOT = require("../../assets/mascot/kak-limau-pointing.png");
 
@@ -29,14 +35,20 @@ const PALETTE = {
   practice: { accent: "#fb7185", soft: "#ffe5e9", icon: "⭐" },
 };
 
-function SpeechBubble({ compact }) {
+function SpeechBubble({ compact, style }) {
   return (
-    <View style={[styles.speechBubble, compact && styles.compactSpeechBubble]}>
+    <Animated.View
+      style={[
+        styles.speechBubble,
+        compact && styles.compactSpeechBubble,
+        style,
+      ]}
+    >
       <Text style={[styles.speechText, compact && styles.compactSpeechText]}>
         Nak belajar apa hari ini?
       </Text>
       <View style={styles.speechTail} />
-    </View>
+    </Animated.View>
   );
 }
 
@@ -50,6 +62,236 @@ export default function StartScreen({ navigation }) {
   );
   const featuredModule = MODULES.find((module) => module.id === "abc");
   const upcomingModules = MODULES.filter((module) => module.id !== "abc");
+  const { isMusicEnabled, toggleMusic } = useModuleScreenAudio();
+
+  const mascotOpacity = useRef(new Animated.Value(0)).current;
+  const mascotEntranceX = useRef(new Animated.Value(-14)).current;
+  const mascotEntranceY = useRef(new Animated.Value(24)).current;
+  const mascotEntranceScale = useRef(new Animated.Value(0.94)).current;
+  const mascotPointX = useRef(new Animated.Value(0)).current;
+  const mascotPointScale = useRef(new Animated.Value(1)).current;
+  const mascotIdleY = useRef(new Animated.Value(0)).current;
+  const mascotIdleScale = useRef(new Animated.Value(1)).current;
+  const mascotIdleRotation = useRef(new Animated.Value(0)).current;
+  const bubbleOpacity = useRef(new Animated.Value(0)).current;
+  const bubbleY = useRef(new Animated.Value(10)).current;
+  const bubbleScale = useRef(new Animated.Value(0.96)).current;
+  const entranceAnimation = useRef(null);
+  const pointAnimation = useRef(null);
+  const idleAnimation = useRef(null);
+  const bubbleAnimation = useRef(null);
+  const animationRun = useRef(0);
+
+  const stopAndResetMascotAnimations = useCallback(() => {
+    animationRun.current += 1;
+    entranceAnimation.current?.stop();
+    pointAnimation.current?.stop();
+    idleAnimation.current?.stop();
+    bubbleAnimation.current?.stop();
+
+    mascotOpacity.setValue(0);
+    mascotEntranceX.setValue(-14);
+    mascotEntranceY.setValue(24);
+    mascotEntranceScale.setValue(0.94);
+    mascotPointX.setValue(0);
+    mascotPointScale.setValue(1);
+    mascotIdleY.setValue(0);
+    mascotIdleScale.setValue(1);
+    mascotIdleRotation.setValue(0);
+    bubbleOpacity.setValue(0);
+    bubbleY.setValue(10);
+    bubbleScale.setValue(0.96);
+  }, [
+    bubbleOpacity,
+    bubbleScale,
+    bubbleY,
+    mascotEntranceScale,
+    mascotEntranceX,
+    mascotEntranceY,
+    mascotIdleRotation,
+    mascotIdleScale,
+    mascotIdleY,
+    mascotOpacity,
+    mascotPointScale,
+    mascotPointX,
+  ]);
+
+  const startMascotAnimations = useCallback(() => {
+    stopAndResetMascotAnimations();
+    const runId = animationRun.current;
+
+    bubbleAnimation.current = Animated.sequence([
+      Animated.delay(190),
+      Animated.parallel([
+        Animated.timing(bubbleOpacity, {
+          toValue: 1,
+          duration: 320,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(bubbleY, {
+          toValue: 0,
+          duration: 360,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(bubbleScale, {
+          toValue: 1,
+          duration: 360,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]),
+    ]);
+
+    entranceAnimation.current = Animated.parallel([
+      Animated.timing(mascotOpacity, {
+        toValue: 1,
+        duration: 500,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(mascotEntranceX, {
+        toValue: 0,
+        duration: 580,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(mascotEntranceY, {
+        toValue: 0,
+        duration: 580,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(mascotEntranceScale, {
+        toValue: 1,
+        duration: 580,
+        easing: Easing.out(Easing.back(1.08)),
+        useNativeDriver: true,
+      }),
+    ]);
+
+    bubbleAnimation.current.start();
+    entranceAnimation.current.start(({ finished }) => {
+      if (!finished || animationRun.current !== runId) return;
+
+      const pointTowardModules = () =>
+        Animated.sequence([
+          Animated.parallel([
+            Animated.timing(mascotPointX, {
+              toValue: 6,
+              duration: 170,
+              easing: Easing.inOut(Easing.sin),
+              useNativeDriver: true,
+            }),
+            Animated.timing(mascotPointScale, {
+              toValue: 1.015,
+              duration: 170,
+              easing: Easing.inOut(Easing.sin),
+              useNativeDriver: true,
+            }),
+          ]),
+          Animated.parallel([
+            Animated.timing(mascotPointX, {
+              toValue: 0,
+              duration: 170,
+              easing: Easing.inOut(Easing.sin),
+              useNativeDriver: true,
+            }),
+            Animated.timing(mascotPointScale, {
+              toValue: 1,
+              duration: 170,
+              easing: Easing.inOut(Easing.sin),
+              useNativeDriver: true,
+            }),
+          ]),
+        ]);
+
+      pointAnimation.current = Animated.sequence([
+        pointTowardModules(),
+        pointTowardModules(),
+      ]);
+
+      pointAnimation.current.start(({ finished: pointFinished }) => {
+        if (!pointFinished || animationRun.current !== runId) return;
+
+        idleAnimation.current = Animated.loop(
+          Animated.parallel([
+            Animated.sequence([
+              Animated.timing(mascotIdleY, {
+                toValue: -5,
+                duration: 1300,
+                easing: Easing.inOut(Easing.sin),
+                useNativeDriver: true,
+              }),
+              Animated.timing(mascotIdleY, {
+                toValue: 0,
+                duration: 1300,
+                easing: Easing.inOut(Easing.sin),
+                useNativeDriver: true,
+              }),
+            ]),
+            Animated.sequence([
+              Animated.timing(mascotIdleScale, {
+                toValue: 1.01,
+                duration: 1300,
+                easing: Easing.inOut(Easing.sin),
+                useNativeDriver: true,
+              }),
+              Animated.timing(mascotIdleScale, {
+                toValue: 1,
+                duration: 1300,
+                easing: Easing.inOut(Easing.sin),
+                useNativeDriver: true,
+              }),
+            ]),
+            Animated.sequence([
+              Animated.timing(mascotIdleRotation, {
+                toValue: 1,
+                duration: 1300,
+                easing: Easing.inOut(Easing.sin),
+                useNativeDriver: true,
+              }),
+              Animated.timing(mascotIdleRotation, {
+                toValue: 0,
+                duration: 1300,
+                easing: Easing.inOut(Easing.sin),
+                useNativeDriver: true,
+              }),
+            ]),
+          ]),
+        );
+        idleAnimation.current.start();
+      });
+    });
+  }, [
+    bubbleOpacity,
+    bubbleScale,
+    bubbleY,
+    mascotEntranceScale,
+    mascotEntranceX,
+    mascotEntranceY,
+    mascotIdleRotation,
+    mascotIdleScale,
+    mascotIdleY,
+    mascotOpacity,
+    mascotPointScale,
+    mascotPointX,
+    stopAndResetMascotAnimations,
+  ]);
+
+  useFocusEffect(
+    useCallback(() => {
+      startMascotAnimations();
+
+      return stopAndResetMascotAnimations;
+    }, [startMascotAnimations, stopAndResetMascotAnimations]),
+  );
+
+  const mascotRotation = mascotIdleRotation.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "0.6deg"],
+  });
 
   function handleOpenModule(module) {
     if (module.id === "abc") {
@@ -67,21 +309,70 @@ export default function StartScreen({ navigation }) {
     >
       <View style={[styles.layout, isCompact && styles.compactLayout]}>
         <View style={[styles.guideArea, { width: guideWidth }]}>
-          <SpeechBubble compact={isCompact} />
-          <Image
-            accessibilityLabel="Kak Limau menunjuk ke arah pilihan modul"
-            resizeMode="contain"
-            source={POINTING_MASCOT}
-            style={{ height: mascotHeight, width: mascotHeight * (2 / 3) }}
-          />
+          <View style={styles.speechAnimationContainer}>
+            <SpeechBubble
+              compact={isCompact}
+              style={{
+                opacity: bubbleOpacity,
+                transform: [
+                  { translateY: bubbleY },
+                  { scale: bubbleScale },
+                ],
+              }}
+            />
+          </View>
+          <Animated.View
+            style={{
+              height: mascotHeight,
+              width: mascotHeight * (2 / 3),
+              opacity: mascotOpacity,
+              transform: [
+                { translateX: mascotEntranceX },
+                { translateY: mascotEntranceY },
+                { scale: mascotEntranceScale },
+                { translateX: mascotPointX },
+                { scale: mascotPointScale },
+                { translateY: mascotIdleY },
+                { scale: mascotIdleScale },
+                { rotate: mascotRotation },
+              ],
+            }}
+          >
+            <Image
+              accessibilityLabel="Kak Limau menunjuk ke arah pilihan modul"
+              resizeMode="contain"
+              source={POINTING_MASCOT}
+              style={styles.mascotImage}
+            />
+          </Animated.View>
         </View>
 
         <View style={styles.moduleArea}>
-          <View style={[styles.heading, isCompact && styles.compactHeading]}>
-            <Text style={[styles.appTitle, isCompact && styles.compactAppTitle]}>
-              Belajar Bahasa Melayu
-            </Text>
-            <Text style={styles.subtitle}>Pilih modul pembelajaran</Text>
+          <View style={styles.headingRow}>
+            <View style={[styles.heading, isCompact && styles.compactHeading]}>
+              <Text
+                style={[styles.appTitle, isCompact && styles.compactAppTitle]}
+              >
+                Belajar Bahasa Melayu
+              </Text>
+              <Text style={styles.subtitle}>Pilih modul pembelajaran</Text>
+            </View>
+            <Pressable
+              accessibilityLabel={
+                isMusicEnabled ? "Matikan muzik" : "Hidupkan muzik"
+              }
+              accessibilityRole="button"
+              hitSlop={6}
+              onPress={toggleMusic}
+              style={({ pressed }) => [
+                styles.soundButton,
+                pressed && styles.soundButtonPressed,
+              ]}
+            >
+              <Text style={styles.soundButtonText}>
+                {isMusicEnabled ? "🔊" : "🔇"}
+              </Text>
+            </Pressable>
           </View>
 
           <ScrollView
@@ -153,6 +444,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  speechAnimationContainer: {
+    width: "100%",
+    alignItems: "center",
+  },
   speechBubble: {
     zIndex: 2,
     width: "94%",
@@ -198,7 +493,16 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
+  mascotImage: {
+    width: "100%",
+    height: "100%",
+  },
+  headingRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+  },
   heading: {
+    flex: 1,
     marginBottom: 13,
   },
   compactHeading: {
@@ -219,6 +523,25 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "800",
     marginTop: 2,
+  },
+  soundButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 10,
+    backgroundColor: "#ffffff",
+    borderWidth: 2,
+    borderColor: PALETTE.bubbleBorder,
+    elevation: 3,
+  },
+  soundButtonPressed: {
+    opacity: 0.75,
+    transform: [{ scale: 0.96 }],
+  },
+  soundButtonText: {
+    fontSize: 22,
   },
   moduleContent: {
     paddingBottom: 12,
