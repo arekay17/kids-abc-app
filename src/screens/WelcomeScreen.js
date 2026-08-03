@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import useWelcomeAudio from "../hooks/useWelcomeAudio";
 
 const MASCOT = require("../../assets/mascot/kak-limau-main.png");
 
@@ -22,6 +23,7 @@ export default function WelcomeScreen({ navigation }) {
     width * (isCompact ? 0.5 : 0.48),
     600,
   );
+  const { isSoundEnabled, toggleSound, stopWelcomeAudio } = useWelcomeAudio();
 
   const entranceOpacity = useRef(new Animated.Value(0)).current;
   const entranceY = useRef(new Animated.Value(32)).current;
@@ -197,7 +199,7 @@ export default function WelcomeScreen({ navigation }) {
     mascotRotation,
   ]);
 
-  function handleStart() {
+  async function handleStart() {
     // Guard against rapid taps while the native stack opens Home.
     if (hasStarted.current) return;
 
@@ -206,6 +208,7 @@ export default function WelcomeScreen({ navigation }) {
     greetingAnimation.current?.stop();
     idleAnimation.current?.stop();
     buttonAnimation.current?.stop();
+    await stopWelcomeAudio();
     // replace opens Home without keeping Welcome in history, so Android Back
     // from Home exits normally instead of returning to the welcome screen.
     navigation.replace("Home");
@@ -224,6 +227,22 @@ export default function WelcomeScreen({ navigation }) {
       <View pointerEvents="none" style={styles.sunGlow} />
       <View pointerEvents="none" style={styles.orangeDot} />
       <View pointerEvents="none" style={styles.limeDot} />
+
+      <Pressable
+        accessibilityLabel={
+          isSoundEnabled ? "Matikan bunyi" : "Hidupkan bunyi"
+        }
+        accessibilityRole="button"
+        onPress={toggleSound}
+        style={({ pressed }) => [
+          styles.soundButton,
+          pressed && styles.soundButtonPressed,
+        ]}
+      >
+        <Text style={styles.soundButtonText}>
+          {isSoundEnabled ? "🔊" : "🔇"}
+        </Text>
+      </Pressable>
 
       <View style={[styles.layout, isCompact && styles.compactLayout]}>
         <Animated.View
@@ -464,5 +483,27 @@ const styles = StyleSheet.create({
     top: 22,
     backgroundColor: "#c7e936",
     opacity: 0.5,
+  },
+  soundButton: {
+    position: "absolute",
+    zIndex: 10,
+    top: 10,
+    right: 14,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fffef5",
+    borderColor: "#e4ef9d",
+    borderWidth: 2,
+    elevation: 4,
+  },
+  soundButtonPressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.96 }],
+  },
+  soundButtonText: {
+    fontSize: 25,
   },
 });
