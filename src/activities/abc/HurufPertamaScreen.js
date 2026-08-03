@@ -301,7 +301,7 @@ function DraggableLetter({
   );
 }
 
-export default function HurufPertamaScreen({ onBack }) {
+export default function HurufPertamaScreen({ navigation }) {
   const { width, height } = useWindowDimensions();
   const isShort = height < 390;
   const answerWidth = width * 0.46;
@@ -488,7 +488,7 @@ export default function HurufPertamaScreen({ onBack }) {
   function handleBack() {
     clearTimeout(nextRoundTimer.current);
     transitionLock.current = true;
-    onBack();
+    navigation.goBack();
   }
 
   if (isFinished) {

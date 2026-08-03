@@ -1,8 +1,8 @@
 // Displays the Mengenal Semua Huruf activity after it is chosen from the ABC
 // activities menu. This learning screen now lives in src/activities/abc so it
 // is kept separate from screens that mainly provide navigation choices.
-// App supplies the selected letter plus callbacks for selecting a letter and
-// going back; shared LETTERS data fills the grid and selected-letter details.
+// App supplies the selected letter and selection callback so the choice can
+// persist across visits; shared LETTERS data fills the grid and details.
 import { useRef } from "react";
 import { useAudioPlayer } from "expo-audio";
 import {
@@ -21,13 +21,11 @@ import LetterButton from "../../components/LetterButton";
 import { LETTER_AUDIO } from "../../data/letterAudio";
 import { LETTERS } from "../../data/letters";
 
-// Props let the parent keep control of state and navigation. selectedLetter is
-// the current state value; the callbacks ask the parent to update it or leave
-// this screen, which causes React to render the appropriate screen again.
+// selectedLetter remains parent-owned while the navigation prop handles Back.
 export default function MengenalSemuaHurufScreen({
+  navigation,
   selectedLetter,
   onSelectLetter,
-  onBack,
 }) {
   const { width, height } = useWindowDimensions();
   const isShort = height < 390;
@@ -158,7 +156,7 @@ export default function MengenalSemuaHurufScreen({
       console.warn("Tidak dapat menghentikan audio huruf.", error);
     }
 
-    onBack();
+    navigation.goBack();
   }
 
   return (

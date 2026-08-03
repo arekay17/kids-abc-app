@@ -1,7 +1,7 @@
-// The app's starting screen displays a heading and the available learning
-// modules. App passes in onOpenModule for navigation; module content comes from
-// MODULES, and this component returns a vertically scrollable module list.
+// The app's Home screen displays a heading and the available learning modules.
+// Module content comes from MODULES, and React Navigation supplies navigation.
 import {
+  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,11 +14,19 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import ModuleCard from "../components/ModuleCard";
 import { MODULES } from "../data/modules";
 
-// onOpenModule is a callback prop. The parent owns navigation and this screen
-// calls the callback with a module when the learner chooses one.
-export default function StartScreen({ onOpenModule }) {
+export default function StartScreen({ navigation }) {
   const { width } = useWindowDimensions();
   const isTablet = width >= 1000;
+
+  function handleOpenModule(module) {
+    if (module.id === "abc") {
+      // navigate pushes the menu so the normal Back action returns Home.
+      navigation.navigate("AbcMenu");
+      return;
+    }
+
+    Alert.alert("Akan datang", `${module.title} akan dibuka nanti.`);
+  }
 
   return (
     <SafeAreaView
@@ -39,7 +47,7 @@ export default function StartScreen({ onOpenModule }) {
           <ModuleCard
             key={module.id}
             module={module}
-            onPress={onOpenModule}
+            onPress={handleOpenModule}
             style={[styles.moduleCard, isTablet && styles.tabletModuleCard]}
           />
         ))}

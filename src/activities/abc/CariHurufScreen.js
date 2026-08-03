@@ -48,7 +48,7 @@ function generateRound() {
   };
 }
 
-export default function CariHurufScreen({ onBack }) {
+export default function CariHurufScreen({ navigation }) {
   const { height } = useWindowDimensions();
   const isShort = height < 390;
   const [roundNumber, setRoundNumber] = useState(1);
@@ -117,7 +117,7 @@ export default function CariHurufScreen({ onBack }) {
 
   function handleBack() {
     clearTimeout(nextRoundTimer.current);
-    onBack();
+    navigation.goBack();
   }
 
   if (isFinished) {

@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { NavigationContainer } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { StatusBar } from "expo-status-bar";
-import { Alert, StyleSheet, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import WelcomeScreen from "./src/screens/WelcomeScreen";
 import StartScreen from "./src/screens/StartScreen";
@@ -11,93 +12,46 @@ import HurufPertamaScreen from "./src/activities/abc/HurufPertamaScreen";
 import PadankanHurufScreen from "./src/activities/abc/PadankanHurufScreen";
 import { LETTERS } from "./src/data/letters";
 
+const Stack = createNativeStackNavigator();
+
 export default function App() {
-  // This state acts as a small navigation system. Changing its value makes
-  // React render the matching screen below without needing a navigation library.
-  const [screen, setScreen] = useState("welcome");
+  // Keep the selected letter outside the navigator so it remains selected if
+  // the learner leaves this activity and opens it again later.
   const [selectedLetter, setSelectedLetter] = useState(LETTERS[0]);
-
-  // WelcomeScreen calls this once the child is ready to see the existing
-  // module list. The rest of the app's screen flow stays unchanged.
-  function handleStartLearning() {
-    setScreen("start");
-  }
-
-  // StartScreen passes the chosen module here. The ABC module now opens its
-  // activity menu first; modules that are not ready still show a message.
-  function handleOpenModule(module) {
-    if (module.id === "abc") {
-      setScreen("abcActivities");
-      return;
-    }
-
-    Alert.alert("Akan datang", `${module.title} akan dibuka nanti.`);
-  }
-
-  // These callback handlers describe each allowed screen transition. Child
-  // screens receive them as props and call them when a button is pressed.
-  function handleOpenAlphabet() {
-    setScreen("mengenalSemuaHuruf");
-  }
-
-  function handleOpenCariHuruf() {
-    setScreen("cariHuruf");
-  }
-
-  function handleOpenHurufPertama() {
-    setScreen("hurufPertama");
-  }
-
-  function handleOpenPadankanHuruf() {
-    setScreen("padankanHuruf");
-  }
-
-  function handleBackToStart() {
-    setScreen("start");
-  }
-
-  function handleBackToAbcActivities() {
-    setScreen("abcActivities");
-  }
 
   return (
     <SafeAreaProvider>
       <StatusBar hidden />
-      <View style={styles.container}>
-        {/* Conditional rendering displays one screen for the current state.
-            The nested condition keeps the app's simple state-based navigation. */}
-        {screen === "welcome" ? (
-          <WelcomeScreen onStart={handleStartLearning} />
-        ) : screen === "start" ? (
-          <StartScreen onOpenModule={handleOpenModule} />
-        ) : screen === "abcActivities" ? (
-          <AbcActivitiesScreen
-            onOpenAlphabet={handleOpenAlphabet}
-            onOpenCariHuruf={handleOpenCariHuruf}
-            onOpenHurufPertama={handleOpenHurufPertama}
-            onOpenPadankanHuruf={handleOpenPadankanHuruf}
-            onBack={handleBackToStart}
-          />
-        ) : screen === "cariHuruf" ? (
-          <CariHurufScreen onBack={handleBackToAbcActivities} />
-        ) : screen === "hurufPertama" ? (
-          <HurufPertamaScreen onBack={handleBackToAbcActivities} />
-        ) : screen === "padankanHuruf" ? (
-          <PadankanHurufScreen onBack={handleBackToAbcActivities} />
-        ) : (
-          <MengenalSemuaHurufScreen
-            selectedLetter={selectedLetter}
-            onSelectLetter={setSelectedLetter}
-            onBack={handleBackToAbcActivities}
-          />
-        )}
-      </View>
+      {/* NavigationContainer owns route history and connects the native stack
+          to Android and iOS back behaviour. Only one is needed for this app. */}
+      <NavigationContainer>
+        {/* Registering every destination in one stack preserves the simple
+            Welcome → Home → ABC menu → activity hierarchy. */}
+        <Stack.Navigator
+          initialRouteName="Welcome"
+          screenOptions={{
+            headerShown: false,
+            animation: "slide_from_right",
+            gestureEnabled: true,
+          }}
+        >
+          <Stack.Screen name="Welcome" component={WelcomeScreen} />
+          <Stack.Screen name="Home" component={StartScreen} />
+          <Stack.Screen name="AbcMenu" component={AbcActivitiesScreen} />
+          <Stack.Screen name="CariHuruf" component={CariHurufScreen} />
+          <Stack.Screen name="HurufPertama" component={HurufPertamaScreen} />
+          <Stack.Screen name="PadankanHuruf" component={PadankanHurufScreen} />
+          <Stack.Screen name="MengenalSemuaHuruf">
+            {(navigationProps) => (
+              <MengenalSemuaHurufScreen
+                {...navigationProps}
+                selectedLetter={selectedLetter}
+                onSelectLetter={setSelectedLetter}
+              />
+            )}
+          </Stack.Screen>
+        </Stack.Navigator>
+      </NavigationContainer>
     </SafeAreaProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});

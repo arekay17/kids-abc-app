@@ -1,7 +1,6 @@
 // Displays the activity choices for the Belajar ABC module between StartScreen
-// and the learning activities in src/activities/abc. It receives callbacks for
-// opening the available ABC activities and going back, then renders the four
-// available activities.
+// and the learning activities in src/activities/abc. React Navigation supplies
+// the navigation prop used to open an activity or return Home.
 import {
   Alert,
   Pressable,
@@ -84,15 +83,7 @@ function ActivityCard({ activity, onPress }) {
   );
 }
 
-// Props are callbacks supplied by App. They let this screen request a screen
-// transition while App remains responsible for the actual navigation state.
-export default function AbcActivitiesScreen({
-  onOpenAlphabet,
-  onOpenCariHuruf,
-  onOpenHurufPertama,
-  onOpenPadankanHuruf,
-  onBack,
-}) {
+export default function AbcActivitiesScreen({ navigation }) {
   // This fallback keeps an unexpected future card from navigating incorrectly.
   function handleComingSoon(activity) {
     Alert.alert("Akan datang", `${activity.title} akan dibuka nanti.`);
@@ -104,8 +95,11 @@ export default function AbcActivitiesScreen({
       style={styles.safeArea}
     >
       <ScrollView contentContainerStyle={styles.container}>
-        {/* Navigation control returns from this menu to the main module list. */}
-        <Pressable onPress={onBack} style={styles.backButton}>
+        {/* goBack pops this menu and reveals Home underneath it. */}
+        <Pressable
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
           <Text style={styles.backText}>← Kembali</Text>
         </Pressable>
 
@@ -124,13 +118,13 @@ export default function AbcActivitiesScreen({
               activity={activity}
               onPress={
                 activity.id === "allLetters"
-                  ? onOpenAlphabet
+                  ? () => navigation.navigate("MengenalSemuaHuruf")
                   : activity.id === "game1"
-                    ? onOpenCariHuruf
+                    ? () => navigation.navigate("CariHuruf")
                     : activity.id === "game2"
-                      ? onOpenHurufPertama
+                      ? () => navigation.navigate("HurufPertama")
                       : activity.id === "matchCase"
-                        ? onOpenPadankanHuruf
+                        ? () => navigation.navigate("PadankanHuruf")
                         : () => handleComingSoon(activity)
               }
             />

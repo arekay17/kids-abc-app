@@ -326,7 +326,7 @@ function DraggableUppercase({
   );
 }
 
-export default function PadankanHurufScreen({ onBack }) {
+export default function PadankanHurufScreen({ navigation }) {
   const { width, height } = useWindowDimensions();
   const isShort = height < 390;
   const tileGap = width < 700 ? 16 : width < 1000 ? 20 : 24;
@@ -537,7 +537,7 @@ export default function PadankanHurufScreen({ onBack }) {
   function handleBack() {
     clearTimeout(roundTimer.current);
     clearTimeout(wrongTargetTimer.current);
-    onBack();
+    navigation.goBack();
   }
 
   if (isFinished) {

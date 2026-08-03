@@ -14,7 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 const MASCOT = require("../../assets/mascot/kak-limau-main.png");
 
-export default function WelcomeScreen({ onStart }) {
+export default function WelcomeScreen({ navigation }) {
   const { width, height } = useWindowDimensions();
   const isCompact = height < 430 || width < 750;
   const mascotHeight = Math.min(
@@ -198,7 +198,7 @@ export default function WelcomeScreen({ onStart }) {
   ]);
 
   function handleStart() {
-    // Guard against rapid taps while App is switching to the start screen.
+    // Guard against rapid taps while the native stack opens Home.
     if (hasStarted.current) return;
 
     hasStarted.current = true;
@@ -206,7 +206,9 @@ export default function WelcomeScreen({ onStart }) {
     greetingAnimation.current?.stop();
     idleAnimation.current?.stop();
     buttonAnimation.current?.stop();
-    onStart();
+    // replace opens Home without keeping Welcome in history, so Android Back
+    // from Home exits normally instead of returning to the welcome screen.
+    navigation.replace("Home");
   }
 
   const mascotRotate = mascotRotation.interpolate({
