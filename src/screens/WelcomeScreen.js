@@ -23,7 +23,8 @@ export default function WelcomeScreen({ navigation }) {
     width * (isCompact ? 0.5 : 0.48),
     600,
   );
-  const { isSoundEnabled, toggleSound, stopWelcomeAudio } = useWelcomeAudio();
+  const { isSoundEnabled, playClick, toggleSound, stopWelcomeAudio } =
+    useWelcomeAudio();
 
   const entranceOpacity = useRef(new Animated.Value(0)).current;
   const entranceY = useRef(new Animated.Value(32)).current;
@@ -208,7 +209,11 @@ export default function WelcomeScreen({ navigation }) {
     greetingAnimation.current?.stop();
     idleAnimation.current?.stop();
     buttonAnimation.current?.stop();
-    await stopWelcomeAudio();
+    // The 120 ms click head-start and the existing music fade run together,
+    // keeping the response within the current transition timing.
+    const clickHeadStart = playClick();
+    const welcomeAudioStop = stopWelcomeAudio();
+    await Promise.all([clickHeadStart, welcomeAudioStop]);
     // replace opens Home without keeping Welcome in history, so Android Back
     // from Home exits normally instead of returning to the welcome screen.
     navigation.replace("Home");

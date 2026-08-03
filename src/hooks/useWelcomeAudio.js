@@ -7,6 +7,7 @@ import {
 
 const WELCOME_MUSIC = require("../../assets/audio/music/welcome-theme-loop-v1.mp3");
 const KAK_LIMAU_GREETING = require("../../assets/audio/voice/kak-limau-welcome-v1.mp3");
+const BUTTON_CLICK = require("../../assets/audio/sfx/button-click-v1.mp3");
 
 export const WELCOME_AUDIO_SETTINGS = {
   musicVolume: 0.24,
@@ -15,6 +16,8 @@ export const WELCOME_AUDIO_SETTINGS = {
   greetingDelay: 700,
   musicFadeInDuration: 320,
   musicFadeOutDuration: 400,
+  clickVolume: 0.75,
+  clickHeadStartDuration: 120,
 };
 
 const FADE_STEP_DURATION = 40;
@@ -47,6 +50,7 @@ export default function useWelcomeAudio() {
   const [voicePlayer] = useState(() =>
     createAudioPlayer(KAK_LIMAU_GREETING, { updateInterval: 100 }),
   );
+  const [clickPlayer] = useState(() => createAudioPlayer(BUTTON_CLICK));
   const voiceStatus = useAudioPlayerStatus(voicePlayer);
   const [isSoundEnabled, setIsSoundEnabled] = useState(true);
   const isMounted = useRef(false);
@@ -58,6 +62,9 @@ export default function useWelcomeAudio() {
   const fadeTimer = useRef(null);
   const fadeResolver = useRef(null);
   const exitPromise = useRef(null);
+  const clickDelayTimer = useRef(null);
+  const clickDelayResolver = useRef(null);
+  const clickPromise = useRef(null);
 
   const cancelGreeting = useCallback(() => {
     if (greetingTimer.current !== null) {
@@ -76,6 +83,19 @@ export default function useWelcomeAudio() {
       const resolve = fadeResolver.current;
       fadeResolver.current = null;
       resolve(false);
+    }
+  }, []);
+
+  const cancelClickDelay = useCallback(() => {
+    if (clickDelayTimer.current !== null) {
+      clearTimeout(clickDelayTimer.current);
+      clickDelayTimer.current = null;
+    }
+
+    if (clickDelayResolver.current) {
+      const resolve = clickDelayResolver.current;
+      clickDelayResolver.current = null;
+      resolve();
     }
   }, []);
 
@@ -217,12 +237,16 @@ export default function useWelcomeAudio() {
       isLeaving.current = true;
       cancelGreeting();
       cancelMusicFade();
+      cancelClickDelay();
+      disposePlayer(clickPlayer);
       disposePlayer(voicePlayer);
       disposePlayer(musicPlayer);
     };
   }, [
     cancelGreeting,
+    cancelClickDelay,
     cancelMusicFade,
+    clickPlayer,
     musicPlayer,
     playMusicFromStart,
     scheduleGreeting,
@@ -260,6 +284,7 @@ export default function useWelcomeAudio() {
 
       void pauseAndReset(voicePlayer);
       void pauseAndReset(musicPlayer);
+      void pauseAndReset(clickPlayer);
       return;
     }
 
@@ -268,11 +293,46 @@ export default function useWelcomeAudio() {
   }, [
     cancelGreeting,
     cancelMusicFade,
+    clickPlayer,
     musicPlayer,
     playMusicFromStart,
     scheduleGreeting,
     voicePlayer,
   ]);
+
+  const playClick = useCallback(() => {
+    if (!soundEnabled.current || isLeaving.current) {
+      return Promise.resolve();
+    }
+
+    if (clickPromise.current) return clickPromise.current;
+
+    clickPromise.current = (async () => {
+      try {
+        clickPlayer.loop = false;
+        clickPlayer.volume = WELCOME_AUDIO_SETTINGS.clickVolume;
+        await clickPlayer.seekTo(0);
+
+        if (!isMounted.current || !soundEnabled.current) return;
+
+        clickPlayer.play();
+        await new Promise((resolve) => {
+          clickDelayResolver.current = resolve;
+          clickDelayTimer.current = setTimeout(() => {
+            clickDelayTimer.current = null;
+            clickDelayResolver.current = null;
+            resolve();
+          }, WELCOME_AUDIO_SETTINGS.clickHeadStartDuration);
+        });
+      } catch {
+        // A click failure must never block navigation to Home.
+      }
+    })().finally(() => {
+      clickPromise.current = null;
+    });
+
+    return clickPromise.current;
+  }, [clickPlayer]);
 
   const stopWelcomeAudio = useCallback(() => {
     if (exitPromise.current) return exitPromise.current;
@@ -306,6 +366,7 @@ export default function useWelcomeAudio() {
 
   return {
     isSoundEnabled,
+    playClick,
     toggleSound,
     stopWelcomeAudio,
   };
