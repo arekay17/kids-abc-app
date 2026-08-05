@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import {
   Animated,
+  Easing,
+  Image,
   PanResponder,
   Pressable,
   ScrollView,
@@ -12,9 +14,20 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LETTERS } from "../../data/letters";
 
-const TOTAL_ROUNDS = 5;
-const NEXT_ROUND_DELAY = 800;
+const KAK_LIMAU = require("../../../assets/mascot/kak-limau-pointing.png");
+
+const TOTAL_ROUNDS = 10;
+const NEXT_ROUND_DELAY = 850;
 const DROP_TOLERANCE = 26;
+const TILE_COLORS = ["#7657d6", "#e05b9d", "#13a6a6"];
+const CELEBRATION_STARS = [
+  { symbol: "★", color: "#ffd34e", left: "7%", top: "12%", size: 40 },
+  { symbol: "✦", color: "#ef6ca8", left: "18%", top: "66%", size: 34 },
+  { symbol: "★", color: "#36c7bd", left: "34%", top: "8%", size: 30 },
+  { symbol: "✦", color: "#ffd34e", left: "61%", top: "13%", size: 38 },
+  { symbol: "★", color: "#ef6ca8", left: "78%", top: "70%", size: 32 },
+  { symbol: "✦", color: "#7657d6", left: "89%", top: "17%", size: 42 },
+];
 
 function shuffle(items) {
   const shuffledItems = [...items];
@@ -40,8 +53,8 @@ function createChoices(correctLetter) {
   return shuffle([correctLetter, ...incorrectLetters]);
 }
 
-// Five unique records are sampled once per session, just as in the original
-// tap activity. Only the way a child submits an answer changes below.
+// Each session keeps the original question and answer generation, sampling ten
+// unique records so the drag activity follows the shared progression length.
 function createSession() {
   return shuffle(LETTERS)
     .slice(0, TOTAL_ROUNDS)
@@ -66,6 +79,7 @@ function overlapsDropZone(tileBounds, targetBounds) {
 
 function DraggableLetter({
   choice,
+  tileColor,
   tileSize,
   disabled,
   activeChoice,
@@ -87,6 +101,7 @@ function DraggableLetter({
 
   latest.current = {
     choice,
+    tileColor,
     tileSize,
     disabled,
     activeChoice,
@@ -288,7 +303,11 @@ function DraggableLetter({
       <Animated.View
         style={[
           styles.letterTile,
-          { borderRadius: tileSize * 0.22, transform: [{ scale }] },
+          {
+            backgroundColor: tileColor,
+            borderRadius: tileSize * 0.22,
+            transform: [{ scale }],
+          },
           activeChoice === choice && styles.draggingTile,
           disabled && activeChoice !== choice && styles.disabledTile,
         ]}
@@ -303,11 +322,11 @@ function DraggableLetter({
 
 export default function HurufPertamaScreen({ navigation }) {
   const { width, height } = useWindowDimensions();
-  const isShort = height < 390;
-  const answerWidth = width * 0.46;
+  const isCompact = width < 760 || height < 390;
+  const answerWidth = width * (isCompact ? 0.34 : 0.36);
   const tileSize = Math.max(
     58,
-    Math.min(isShort ? 76 : 92, (answerWidth - 48) / 3),
+    Math.min(isCompact ? 76 : 92, (answerWidth - 32) / 3),
   );
   const [questions, setQuestions] = useState(createSession);
   const [roundNumber, setRoundNumber] = useState(1);
@@ -326,6 +345,13 @@ export default function HurufPertamaScreen({ navigation }) {
   const targetShake = useRef(new Animated.Value(0)).current;
   const wordScale = useRef(new Animated.Value(1)).current;
   const cardScale = useRef(new Animated.Value(1)).current;
+  const mascotFloat = useRef(new Animated.Value(0)).current;
+  const celebrationScale = useRef(new Animated.Value(0.8)).current;
+  const celebrationOpacity = useRef(new Animated.Value(0)).current;
+  const starAnimations = useRef(
+    CELEBRATION_STARS.map(() => new Animated.Value(0)),
+  ).current;
+  const activeAnimations = useRef([]);
   const currentQuestion = questions[roundNumber - 1];
 
   useEffect(() => {
@@ -334,8 +360,83 @@ export default function HurufPertamaScreen({ navigation }) {
       targetShake.stopAnimation();
       wordScale.stopAnimation();
       cardScale.stopAnimation();
+      activeAnimations.current.forEach((animation) => animation.stop());
     };
   }, [cardScale, targetShake, wordScale]);
+
+  useEffect(() => {
+    if (isFinished) {
+      mascotFloat.stopAnimation();
+      mascotFloat.setValue(0);
+      return undefined;
+    }
+
+    const floatAnimation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(mascotFloat, {
+          toValue: -5,
+          duration: 1700,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(mascotFloat, {
+          toValue: 0,
+          duration: 1700,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+
+    floatAnimation.start();
+    return () => floatAnimation.stop();
+  }, [isFinished, mascotFloat]);
+
+  useEffect(() => {
+    if (!isFinished) {
+      return undefined;
+    }
+
+    celebrationScale.setValue(0.8);
+    celebrationOpacity.setValue(0);
+    starAnimations.forEach((value) => value.setValue(0));
+
+    const celebrationAnimation = Animated.parallel([
+      Animated.parallel([
+        Animated.timing(celebrationOpacity, {
+          toValue: 1,
+          duration: 280,
+          useNativeDriver: true,
+        }),
+        Animated.spring(celebrationScale, {
+          toValue: 1,
+          friction: 5,
+          tension: 80,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.stagger(
+        85,
+        starAnimations.map((value) =>
+          Animated.spring(value, {
+            toValue: 1,
+            friction: 4,
+            tension: 90,
+            useNativeDriver: true,
+          }),
+        ),
+      ),
+    ]);
+
+    activeAnimations.current = [celebrationAnimation];
+    celebrationAnimation.start();
+    return () => celebrationAnimation.stop();
+  }, [
+    celebrationOpacity,
+    celebrationScale,
+    isFinished,
+    starAnimations,
+  ]);
 
   function resetDragState() {
     // Changing the round key remounts every tile with a fresh ValueXY. These
@@ -354,6 +455,7 @@ export default function HurufPertamaScreen({ navigation }) {
 
   function startNewSession() {
     clearTimeout(nextRoundTimer.current);
+    activeAnimations.current.forEach((animation) => animation.stop());
     setQuestions(createSession());
     setRoundNumber(1);
     setScore(0);
@@ -493,131 +595,274 @@ export default function HurufPertamaScreen({ navigation }) {
 
   if (isFinished) {
     return (
-      <SafeAreaView
-        edges={["top", "left", "right", "bottom"]}
-        style={styles.safeArea}
-      >
-        <ScrollView
-          contentContainerStyle={[styles.container, styles.resultContainer]}
-        >
-          <Text style={styles.resultEmoji}>🎉</Text>
-          <Text style={styles.resultTitle}>Tahniah!</Text>
-          <Text style={styles.resultScore}>
-            Skor kamu: {score} / {TOTAL_ROUNDS}
-          </Text>
+      <SafeAreaView edges={["top", "left", "right", "bottom"]} style={styles.safeArea}>
+        <View pointerEvents="none" style={styles.celebrationDecorations}>
+          {CELEBRATION_STARS.map((star, index) => {
+            const animation = starAnimations[index];
+            return (
+              <Animated.Text
+                key={`${star.symbol}-${star.left}`}
+                style={[
+                  styles.celebrationStar,
+                  {
+                    color: star.color,
+                    fontSize: star.size,
+                    left: star.left,
+                    top: star.top,
+                    opacity: animation,
+                    transform: [
+                      { scale: animation },
+                      {
+                        rotate: animation.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: ["-35deg", "0deg"],
+                        }),
+                      },
+                    ],
+                  },
+                ]}
+              >
+                {star.symbol}
+              </Animated.Text>
+            );
+          })}
+        </View>
 
-          <Pressable onPress={startNewSession} style={styles.primaryButton}>
-            <Text style={styles.primaryButtonText}>Main Lagi</Text>
-          </Pressable>
-          <Pressable onPress={handleBack} style={styles.secondaryButton}>
-            <Text style={styles.secondaryButtonText}>
-              Kembali ke Aktiviti ABC
-            </Text>
-          </Pressable>
+        <ScrollView
+          bounces={false}
+          contentContainerStyle={styles.resultContainer}
+          showsVerticalScrollIndicator={false}
+        >
+          <Animated.View
+            style={[
+              styles.resultCard,
+              {
+                opacity: celebrationOpacity,
+                transform: [{ scale: celebrationScale }],
+              },
+            ]}
+          >
+            <View style={styles.resultMascotWrap}>
+              <Image
+                accessibilityLabel="Kak Limau meraikan kejayaan"
+                resizeMode="contain"
+                source={KAK_LIMAU}
+                style={styles.resultMascot}
+              />
+            </View>
+
+            <View style={styles.resultContent}>
+              <Text style={styles.resultEyebrow}>★ Huruf Pertama ★</Text>
+              <Text style={styles.resultTitle}>Tahniah!</Text>
+              <View style={styles.resultScorePill}>
+                <Text style={styles.resultScoreLabel}>Skor kamu</Text>
+                <Text style={styles.resultScore}>
+                  {score} / {TOTAL_ROUNDS}
+                </Text>
+              </View>
+
+              <View style={[styles.resultButtons, isCompact && styles.resultButtonsCompact]}>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={startNewSession}
+                  style={({ pressed }) => [
+                    styles.primaryButton,
+                    pressed && styles.buttonPressed,
+                  ]}
+                >
+                  <Text style={styles.primaryButtonText}>↻ Main Lagi</Text>
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={handleBack}
+                  style={({ pressed }) => [
+                    styles.secondaryButton,
+                    pressed && styles.buttonPressed,
+                  ]}
+                >
+                  <Text style={styles.secondaryButtonText}>← Kembali</Text>
+                </Pressable>
+              </View>
+            </View>
+          </Animated.View>
         </ScrollView>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView
-      edges={["top", "left", "right", "bottom"]}
-      style={styles.safeArea}
-    >
+    <SafeAreaView edges={["top", "left", "right", "bottom"]} style={styles.safeArea}>
+      <View pointerEvents="none" style={styles.backgroundDecorations}>
+        <View style={[styles.backgroundDot, styles.backgroundDotOne]} />
+        <View style={[styles.backgroundDot, styles.backgroundDotTwo]} />
+        <Text style={[styles.backgroundLetter, styles.backgroundLetterOne]}>A</Text>
+        <Text style={[styles.backgroundLetter, styles.backgroundLetterTwo]}>B</Text>
+      </View>
+
       <ScrollView
+        bounces={false}
         contentContainerStyle={styles.container}
-        scrollEnabled={isShort && activeChoice === null}
+        scrollEnabled={isCompact && activeChoice === null}
+        showsVerticalScrollIndicator={false}
       >
-        <View style={styles.header}>
-          <View style={styles.titleRow}>
-            <Pressable onPress={handleBack} style={styles.backButton}>
-              <Text style={styles.backText}>← Kembali</Text>
-            </Pressable>
-            <Text style={[styles.title, isShort && styles.shortTitle]}>
+        <View style={[styles.header, isCompact && styles.headerCompact]}>
+          <Pressable
+            accessibilityLabel="Kembali"
+            accessibilityRole="button"
+            hitSlop={8}
+            onPress={handleBack}
+            style={({ pressed }) => [
+              styles.backButton,
+              pressed && styles.headerButtonPressed,
+            ]}
+          >
+            <Text style={styles.backIcon}>‹</Text>
+            <Text style={styles.backText}>Kembali</Text>
+          </Pressable>
+
+          <View style={styles.titleArea}>
+            <Text style={[styles.title, isCompact && styles.titleCompact]}>
               Huruf Pertama
             </Text>
-            <View style={styles.backButtonSpacer} />
+            <View style={styles.roundPill}>
+              <Text style={styles.roundText}>
+                Pusingan {roundNumber}/{TOTAL_ROUNDS}
+              </Text>
+            </View>
           </View>
-          <View style={styles.progressRow}>
-            <Text style={styles.progressText}>
-              Soalan {roundNumber} daripada {TOTAL_ROUNDS}
-            </Text>
-            <Text style={styles.progressText}>Skor: {score}</Text>
+
+          <View accessibilityLabel={`Skor ${score}`} style={styles.scorePill}>
+            <Text style={styles.scoreStar}>★</Text>
+            <Text style={styles.scoreText}>Skor {score}</Text>
           </View>
         </View>
 
-        <View style={styles.mainRow}>
-          <Animated.View
-            style={[styles.questionCard, { transform: [{ scale: cardScale }] }]}
-          >
-            <Text style={[styles.emoji, isShort && styles.shortEmoji]}>
-              {currentQuestion.emoji}
-            </Text>
+        <View
+          style={[
+            styles.mainContentRow,
+            isCompact && styles.mainContentRowCompact,
+          ]}
+        >
+          <View style={[styles.mascotPanel, isCompact && styles.mascotPanelCompact]}>
+            <View style={[styles.speechBubble, isCompact && styles.speechBubbleCompact]}>
+              <Text style={[styles.speechText, isCompact && styles.speechTextCompact]}>
+                Pilih huruf pertama!
+              </Text>
+              <View style={styles.speechTail} />
+            </View>
             <Animated.View
               style={[
-                styles.wordRow,
-                { transform: [{ scale: wordScale }] },
+                styles.mascotAnimation,
+                { transform: [{ translateY: mascotFloat }] },
               ]}
             >
+              <Image
+                accessibilityLabel="Kak Limau membantu memilih huruf pertama"
+                resizeMode="contain"
+                source={KAK_LIMAU}
+                style={styles.mascot}
+              />
+            </Animated.View>
+          </View>
+
+          <View style={[styles.gamePanel, isCompact && styles.gamePanelCompact]}>
+            <Animated.View
+              style={[
+                styles.questionCard,
+                isCompact && styles.questionCardCompact,
+                { transform: [{ scale: cardScale }] },
+              ]}
+            >
+              <View style={styles.questionLabel}>
+                <Text style={styles.questionLabelText}>Huruf pertama</Text>
+              </View>
+              <Text style={[styles.emoji, isCompact && styles.emojiCompact]}>
+                {currentQuestion.emoji}
+              </Text>
               <Animated.View
-                ref={dropZoneRef}
-                onLayout={() => measureDropZone(true)}
                 style={[
-                  styles.dropZone,
-                  isTargetActive && styles.activeDropZone,
-                  isCompleted && styles.completedDropZone,
-                  { transform: [{ translateX: targetShake }] },
+                  styles.wordRow,
+                  { transform: [{ scale: wordScale }] },
+                ]}
+              >
+                <Animated.View
+                  ref={dropZoneRef}
+                  onLayout={() => measureDropZone(true)}
+                  style={[
+                    styles.dropZone,
+                    isCompact && styles.dropZoneCompact,
+                    isTargetActive && styles.activeDropZone,
+                    isCompleted && styles.completedDropZone,
+                    { transform: [{ translateX: targetShake }] },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.dropZoneText,
+                      isCompact && styles.dropZoneTextCompact,
+                      isCompleted && styles.completedWord,
+                    ]}
+                  >
+                    {isCompleted ? currentQuestion.letter : "?"}
+                  </Text>
+                </Animated.View>
+                <Text
+                  style={[
+                    styles.wordRemainder,
+                    isCompact && styles.wordRemainderCompact,
+                    isCompleted && styles.completedWord,
+                  ]}
+                >
+                  {currentQuestion.word.slice(1)}
+                </Text>
+              </Animated.View>
+              <Text style={[styles.instruction, isCompact && styles.instructionCompact]}>
+                Seret huruf yang betul
+              </Text>
+            </Animated.View>
+
+            <View style={[styles.answerArea, isCompact && styles.answerAreaCompact]}>
+              <Text style={[styles.answerHeading, isCompact && styles.answerHeadingCompact]}>
+                Pilih dan seret huruf
+              </Text>
+              <View style={[styles.choices, isCompact && styles.choicesCompact]}>
+                {currentQuestion.choices.map((choice, index) => (
+                  <DraggableLetter
+                    key={`${roundNumber}-${choice}`}
+                    choice={choice}
+                    tileColor={TILE_COLORS[index]}
+                    tileSize={tileSize}
+                    disabled={isTransitioning}
+                    activeChoice={activeChoice}
+                    onDragStart={handleDragStart}
+                    onTargetChange={setIsTargetActive}
+                    getTargetBounds={measureDropZone}
+                    onWrongDrop={runWrongAnimation}
+                    onCorrectDrop={handleCorrectDrop}
+                  />
+                ))}
+              </View>
+
+              <View
+                accessibilityLiveRegion="polite"
+                style={[
+                  styles.feedbackArea,
+                  feedback === "Betul!" && styles.correctFeedbackArea,
+                  feedback === "Cuba lagi" && styles.tryFeedbackArea,
                 ]}
               >
                 <Text
                   style={[
-                    styles.dropZoneText,
-                    isCompleted && styles.completedWord,
+                    styles.feedback,
+                    feedback === "Betul!"
+                      ? styles.correctFeedback
+                      : styles.tryFeedback,
                   ]}
                 >
-                  {isCompleted ? currentQuestion.letter : "?"}
+                  {feedback === "Betul!" ? "★ Betul!" : feedback || "Seret satu huruf"}
                 </Text>
-              </Animated.View>
-              <Text
-                style={[
-                  styles.wordRemainder,
-                  isCompleted && styles.completedWord,
-                ]}
-              >
-                {currentQuestion.word.slice(1)}
-              </Text>
-            </Animated.View>
-            <Text style={styles.instruction}>Seret huruf yang betul</Text>
-          </Animated.View>
-
-          <View style={styles.answerArea}>
-            <View style={styles.choices}>
-              {currentQuestion.choices.map((choice) => (
-                <DraggableLetter
-                  key={`${roundNumber}-${choice}`}
-                  choice={choice}
-                  tileSize={tileSize}
-                  disabled={isTransitioning}
-                  activeChoice={activeChoice}
-                  onDragStart={handleDragStart}
-                  onTargetChange={setIsTargetActive}
-                  getTargetBounds={measureDropZone}
-                  onWrongDrop={runWrongAnimation}
-                  onCorrectDrop={handleCorrectDrop}
-                />
-              ))}
+              </View>
             </View>
-
-            <Text
-              style={[
-                styles.feedback,
-                feedback === "Betul!"
-                  ? styles.correctFeedback
-                  : styles.tryFeedback,
-              ]}
-            >
-              {feedback || " "}
-            </Text>
           </View>
         </View>
       </ScrollView>
@@ -628,155 +873,391 @@ export default function HurufPertamaScreen({ navigation }) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#ecfdf5",
+    backgroundColor: "#f2edff",
+  },
+  backgroundDecorations: {
+    ...StyleSheet.absoluteFillObject,
+    overflow: "hidden",
+  },
+  backgroundDot: {
+    position: "absolute",
+    borderRadius: 999,
+  },
+  backgroundDotOne: {
+    width: 180,
+    height: 180,
+    left: -65,
+    bottom: -85,
+    backgroundColor: "#ffe79a",
+  },
+  backgroundDotTwo: {
+    width: 115,
+    height: 115,
+    right: -30,
+    top: 68,
+    backgroundColor: "#c8f3ee",
+  },
+  backgroundLetter: {
+    position: "absolute",
+    color: "rgba(112, 78, 190, 0.08)",
+    fontSize: 90,
+    fontWeight: "900",
+  },
+  backgroundLetterOne: {
+    left: "3%",
+    top: "31%",
+    transform: [{ rotate: "-12deg" }],
+  },
+  backgroundLetterTwo: {
+    right: "3%",
+    bottom: "3%",
+    transform: [{ rotate: "12deg" }],
   },
   container: {
     flexGrow: 1,
-    backgroundColor: "#ecfdf5",
-    paddingTop: 12,
-    paddingHorizontal: 18,
+    paddingHorizontal: 16,
+    paddingTop: 10,
     paddingBottom: 14,
   },
-  resultContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 24,
-  },
-  backButton: {
-    alignSelf: "flex-start",
-    backgroundColor: "#ffffff",
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 999,
-    elevation: 2,
-  },
-  backText: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: "#14532d",
-  },
-  title: {
-    flex: 1,
-    fontSize: 32,
-    fontWeight: "900",
-    color: "#14532d",
-    textAlign: "center",
-  },
-  shortTitle: {
-    fontSize: 27,
-  },
   header: {
-    marginBottom: 10,
-  },
-  titleRow: {
+    minHeight: 54,
+    borderRadius: 20,
+    backgroundColor: "#6953bd",
+    paddingHorizontal: 12,
+    paddingVertical: 7,
     flexDirection: "row",
     alignItems: "center",
-  },
-  backButtonSpacer: {
-    width: 104,
-  },
-  progressRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 10,
-  },
-  progressText: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: "#166534",
-  },
-  mainRow: {
-    flex: 1,
-    flexDirection: "row",
-    gap: 22,
-    alignItems: "stretch",
-  },
-  questionCard: {
-    flex: 1,
-    backgroundColor: "#ffffff",
-    borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 14,
+    shadowColor: "#453489",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
     elevation: 4,
   },
-  answerArea: {
-    flex: 1,
-    minWidth: 0,
+  headerCompact: {
+    minHeight: 46,
+    borderRadius: 16,
+    paddingVertical: 5,
+  },
+  backButton: {
+    minHeight: 40,
+    minWidth: 112,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    flexDirection: "row",
+    alignItems: "center",
     justifyContent: "center",
   },
-  emoji: {
-    fontSize: 56,
+  backIcon: {
+    color: "#ffffff",
+    fontSize: 30,
+    fontWeight: "800",
+    lineHeight: 30,
+    marginRight: 3,
   },
-  shortEmoji: {
-    fontSize: 48,
+  backText: {
+    color: "#ffffff",
+    fontSize: 15,
+    fontWeight: "900",
+  },
+  headerButtonPressed: {
+    backgroundColor: "rgba(255,255,255,0.32)",
+  },
+  titleArea: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+  },
+  title: {
+    color: "#ffffff",
+    fontSize: 25,
+    fontWeight: "900",
+  },
+  titleCompact: {
+    fontSize: 20,
+  },
+  roundPill: {
+    backgroundColor: "#ffe36e",
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+  },
+  roundText: {
+    color: "#604700",
+    fontSize: 15,
+    fontWeight: "900",
+  },
+  scorePill: {
+    minHeight: 40,
+    minWidth: 112,
+    borderRadius: 14,
+    backgroundColor: "#ffffff",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 12,
+  },
+  scoreStar: {
+    color: "#f4aa2e",
+    fontSize: 19,
+    marginRight: 6,
+  },
+  scoreText: {
+    color: "#55439a",
+    fontSize: 15,
+    fontWeight: "900",
+  },
+  mainContentRow: {
+    flex: 1,
+    minHeight: 265,
+    marginTop: 12,
+    flexDirection: "row",
+    gap: 12,
+  },
+  mainContentRowCompact: {
+    marginTop: 9,
+    gap: 8,
+  },
+  mascotPanel: {
+    width: "29%",
+    minWidth: 0,
+    borderRadius: 28,
+    borderWidth: 2,
+    borderColor: "#d2c7fa",
+    backgroundColor: "#e9e3ff",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    paddingHorizontal: 4,
+    paddingTop: 8,
+    paddingBottom: 0,
+    overflow: "hidden",
+    shadowColor: "#5943a5",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 2,
+  },
+  mascotPanelCompact: {
+    width: "28%",
+    borderRadius: 22,
+    paddingHorizontal: 2,
+    paddingTop: 5,
+  },
+  speechBubble: {
+    zIndex: 2,
+    width: "92%",
+    maxWidth: 240,
+    borderRadius: 18,
+    borderWidth: 2,
+    borderColor: "#b8a8ef",
+    backgroundColor: "#ffffff",
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    alignItems: "center",
+    shadowColor: "#5943a5",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  speechBubbleCompact: {
+    borderRadius: 15,
+    paddingHorizontal: 7,
+    paddingVertical: 6,
+  },
+  speechText: {
+    color: "#4f3c89",
+    fontSize: 16,
+    lineHeight: 20,
+    fontWeight: "900",
+    textAlign: "center",
+  },
+  speechTextCompact: {
+    fontSize: 13,
+    lineHeight: 16,
+  },
+  speechTail: {
+    position: "absolute",
+    bottom: -8,
+    left: "47%",
+    width: 14,
+    height: 14,
+    backgroundColor: "#ffffff",
+    borderRightWidth: 2,
+    borderBottomWidth: 2,
+    borderColor: "#b8a8ef",
+    transform: [{ rotate: "45deg" }],
+  },
+  mascotAnimation: {
+    flex: 1,
+    width: "100%",
+    minHeight: 0,
+    alignItems: "center",
+    justifyContent: "flex-end",
+  },
+  mascot: {
+    width: "100%",
+    height: "100%",
+    transform: [{ scale: 1.08 }],
+  },
+  gamePanel: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: "row",
+    gap: 12,
+    borderRadius: 28,
+    backgroundColor: "rgba(255,255,255,0.46)",
+    padding: 8,
+  },
+  gamePanelCompact: {
+    gap: 8,
+    borderRadius: 22,
+    padding: 6,
+  },
+  questionCard: {
+    flex: 0.92,
+    minWidth: 0,
+    height: "100%",
+    borderRadius: 26,
+    borderWidth: 4,
+    borderColor: "#42c7bd",
+    backgroundColor: "#e4fbf8",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    shadowColor: "#168d86",
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.17,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  questionCardCompact: {
+    borderRadius: 21,
+    borderWidth: 3,
+    paddingHorizontal: 7,
+    paddingVertical: 7,
+  },
+  questionLabel: {
+    borderRadius: 999,
+    backgroundColor: "#ffffff",
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+  },
+  questionLabelText: {
+    color: "#57419c",
+    fontSize: 16,
+    fontWeight: "900",
+    textAlign: "center",
+  },
+  emoji: {
+    fontSize: 58,
+    lineHeight: 70,
+  },
+  emojiCompact: {
+    fontSize: 46,
+    lineHeight: 54,
   },
   wordRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 6,
+    marginTop: 2,
   },
   dropZone: {
-    width: 50,
+    width: 52,
     height: 58,
     borderRadius: 14,
     borderWidth: 3,
     borderStyle: "dashed",
-    borderColor: "#16a34a",
-    backgroundColor: "#ecfdf5",
+    borderColor: "#d94b91",
+    backgroundColor: "#fff0f7",
     alignItems: "center",
     justifyContent: "center",
     marginRight: 3,
   },
+  dropZoneCompact: {
+    width: 44,
+    height: 49,
+    borderRadius: 12,
+  },
   activeDropZone: {
     borderStyle: "solid",
     borderWidth: 4,
-    borderColor: "#15803d",
-    backgroundColor: "#bbf7d0",
+    borderColor: "#8c55d8",
+    backgroundColor: "#eee5ff",
   },
   completedDropZone: {
     borderStyle: "solid",
-    backgroundColor: "#dcfce7",
+    borderColor: "#20a99f",
+    backgroundColor: "#d7f8f3",
   },
   dropZoneText: {
+    color: "#cb3d82",
     fontSize: 30,
     fontWeight: "900",
-    color: "#15803d",
+  },
+  dropZoneTextCompact: {
+    fontSize: 25,
   },
   wordRemainder: {
-    fontSize: 32,
+    color: "#3f3556",
+    fontSize: 30,
     fontWeight: "900",
-    color: "#1f2937",
+  },
+  wordRemainderCompact: {
+    fontSize: 24,
   },
   completedWord: {
-    color: "#15803d",
+    color: "#168e85",
   },
   instruction: {
-    fontSize: 19,
+    color: "#4a3d5f",
+    fontSize: 17,
     fontWeight: "800",
-    color: "#1f2937",
     textAlign: "center",
-    marginTop: 12,
+    marginTop: 9,
+  },
+  instructionCompact: {
+    fontSize: 14,
+    marginTop: 6,
+  },
+  answerArea: {
+    flex: 1.28,
+    minWidth: 0,
+    borderRadius: 25,
+    backgroundColor: "rgba(255,255,255,0.9)",
+    paddingHorizontal: 12,
+    paddingVertical: 11,
+    justifyContent: "center",
+  },
+  answerAreaCompact: {
+    borderRadius: 20,
+    paddingHorizontal: 7,
+    paddingVertical: 7,
+  },
+  answerHeading: {
+    color: "#5a478f",
+    fontSize: 17,
+    fontWeight: "900",
+    textAlign: "center",
+    marginBottom: 12,
+  },
+  answerHeadingCompact: {
+    fontSize: 14,
+    marginBottom: 8,
   },
   choices: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    gap: 14,
+    gap: 12,
     overflow: "visible",
   },
-  letterTile: {
-    flex: 1,
-    width: "100%",
-    backgroundColor: "#ffffff",
-    alignItems: "center",
-    justifyContent: "center",
-    elevation: 5,
-    shadowColor: "#14532d",
-    shadowOpacity: 0.18,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 3 },
+  choicesCompact: {
+    gap: 8,
   },
   tileMovement: {
     zIndex: 1,
@@ -784,73 +1265,189 @@ const styles = StyleSheet.create({
   draggingMovement: {
     zIndex: 20,
   },
+  letterTile: {
+    flex: 1,
+    width: "100%",
+    borderWidth: 3,
+    borderColor: "rgba(255,255,255,0.72)",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#493477",
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
+  },
   draggingTile: {
+    borderColor: "#fff5a8",
     elevation: 14,
-    shadowOpacity: 0.32,
+    shadowOpacity: 0.34,
     shadowRadius: 9,
   },
   disabledTile: {
-    opacity: 0.65,
+    opacity: 0.62,
   },
   tileText: {
+    color: "#ffffff",
     fontWeight: "900",
-    color: "#14532d",
+    textShadowColor: "rgba(0,0,0,0.14)",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 1,
+  },
+  feedbackArea: {
+    minHeight: 44,
+    borderRadius: 15,
+    backgroundColor: "#f1eff8",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 13,
+    paddingHorizontal: 10,
+  },
+  correctFeedbackArea: {
+    backgroundColor: "#daf7ec",
+  },
+  tryFeedbackArea: {
+    backgroundColor: "#fff0dc",
   },
   feedback: {
-    minHeight: 42,
-    fontSize: 26,
+    color: "#6c6680",
+    fontSize: 19,
     fontWeight: "900",
     textAlign: "center",
-    marginTop: 16,
   },
   correctFeedback: {
-    color: "#15803d",
+    color: "#16885f",
   },
   tryFeedback: {
-    color: "#b45309",
+    color: "#b75d19",
   },
-  resultEmoji: {
-    fontSize: 82,
+  celebrationDecorations: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 2,
+  },
+  celebrationStar: {
+    position: "absolute",
+    fontWeight: "900",
+    textShadowColor: "rgba(70,55,100,0.14)",
+    textShadowOffset: { width: 0, height: 3 },
+    textShadowRadius: 2,
+  },
+  resultContainer: {
+    flexGrow: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 28,
+    paddingVertical: 20,
+  },
+  resultCard: {
+    width: "76%",
+    maxWidth: 850,
+    minWidth: 520,
+    minHeight: 285,
+    borderRadius: 32,
+    borderWidth: 5,
+    borderColor: "#ffd34e",
+    backgroundColor: "#ffffff",
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 20,
+    shadowColor: "#543d9f",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.22,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  resultMascotWrap: {
+    width: "37%",
+    height: 240,
+    borderRadius: 24,
+    backgroundColor: "#eee9ff",
+    overflow: "hidden",
+  },
+  resultMascot: {
+    width: "100%",
+    height: "100%",
+  },
+  resultContent: {
+    flex: 1,
+    alignItems: "center",
+    paddingHorizontal: 20,
+  },
+  resultEyebrow: {
+    color: "#d64b8d",
+    fontSize: 18,
+    fontWeight: "900",
   },
   resultTitle: {
+    color: "#684ebd",
     fontSize: 42,
     fontWeight: "900",
-    color: "#14532d",
-    marginTop: 12,
+    marginTop: 2,
+  },
+  resultScorePill: {
+    minWidth: 180,
+    borderRadius: 18,
+    backgroundColor: "#f0ecff",
+    alignItems: "center",
+    paddingHorizontal: 22,
+    paddingVertical: 8,
+    marginTop: 8,
+  },
+  resultScoreLabel: {
+    color: "#6d6485",
+    fontSize: 13,
+    fontWeight: "800",
   },
   resultScore: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: "#166534",
+    color: "#df5599",
+    fontSize: 28,
+    fontWeight: "900",
+  },
+  resultButtons: {
+    marginTop: 15,
+    flexDirection: "row",
+    gap: 10,
+  },
+  resultButtonsCompact: {
     marginTop: 10,
-    marginBottom: 32,
   },
   primaryButton: {
-    width: "70%",
-    maxWidth: 520,
-    backgroundColor: "#16a34a",
-    borderRadius: 18,
-    paddingVertical: 16,
+    minWidth: 135,
+    minHeight: 48,
+    borderRadius: 16,
+    backgroundColor: "#7657d6",
     alignItems: "center",
-    marginBottom: 14,
+    justifyContent: "center",
+    paddingHorizontal: 18,
+    shadowColor: "#493294",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.22,
+    shadowRadius: 4,
+    elevation: 4,
   },
   primaryButtonText: {
-    fontSize: 20,
-    fontWeight: "900",
     color: "#ffffff",
+    fontSize: 17,
+    fontWeight: "900",
   },
   secondaryButton: {
-    width: "70%",
-    maxWidth: 520,
+    minWidth: 125,
+    minHeight: 48,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: "#ad9ce6",
     backgroundColor: "#ffffff",
-    borderRadius: 18,
-    paddingVertical: 16,
     alignItems: "center",
-    elevation: 2,
+    justifyContent: "center",
+    paddingHorizontal: 18,
   },
   secondaryButtonText: {
+    color: "#624cac",
     fontSize: 17,
-    fontWeight: "800",
-    color: "#14532d",
+    fontWeight: "900",
+  },
+  buttonPressed: {
+    transform: [{ scale: 0.97 }],
+    opacity: 0.9,
   },
 });
