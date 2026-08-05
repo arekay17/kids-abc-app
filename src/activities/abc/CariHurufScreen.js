@@ -77,6 +77,7 @@ export default function CariHurufScreen({ navigation }) {
   const feedbackScale = useRef(new Animated.Value(1)).current;
   const feedbackX = useRef(new Animated.Value(0)).current;
   const targetScale = useRef(new Animated.Value(1)).current;
+  const mascotFloat = useRef(new Animated.Value(0)).current;
   const celebrationScale = useRef(new Animated.Value(0.8)).current;
   const celebrationOpacity = useRef(new Animated.Value(0)).current;
   const starAnimations = useRef(
@@ -91,6 +92,34 @@ export default function CariHurufScreen({ navigation }) {
       activeAnimations.current.forEach((animation) => animation.stop());
     };
   }, []);
+
+  useEffect(() => {
+    if (isFinished) {
+      mascotFloat.stopAnimation();
+      mascotFloat.setValue(0);
+      return undefined;
+    }
+
+    const floatAnimation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(mascotFloat, {
+          toValue: -5,
+          duration: 1700,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(mascotFloat, {
+          toValue: 0,
+          duration: 1700,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+
+    floatAnimation.start();
+    return () => floatAnimation.stop();
+  }, [isFinished, mascotFloat]);
 
   useEffect(() => {
     if (!isFinished) {
@@ -391,10 +420,20 @@ export default function CariHurufScreen({ navigation }) {
           </View>
         </View>
 
-        <View style={[styles.mainRow, isCompact && styles.mainRowCompact]}>
-          <View style={styles.guideArea}>
+        <View
+          style={[
+            styles.mainContentRow,
+            isCompact && styles.mainContentRowCompact,
+          ]}
+        >
+          <View style={[styles.gamePanel, isCompact && styles.gamePanelCompact]}>
             <View style={[styles.questionCard, isCompact && styles.questionCardCompact]}>
-              <View style={styles.instructionPill}>
+              <View
+                style={[
+                  styles.instructionPill,
+                  isCompact && styles.instructionPillCompact,
+                ]}
+              >
                 <Text style={[styles.instruction, isCompact && styles.instructionCompact]}>
                   Cari huruf ini!
                 </Text>
@@ -412,75 +451,90 @@ export default function CariHurufScreen({ navigation }) {
               <View style={styles.targetUnderline} />
             </View>
 
-            <Image
-              accessibilityLabel="Kak Limau membantu mencari huruf"
-              resizeMode="contain"
-              source={KAK_LIMAU}
-              style={[styles.mascot, isCompact && styles.mascotCompact]}
-            />
-          </View>
+            <View style={[styles.answerArea, isCompact && styles.answerAreaCompact]}>
+              <Text style={[styles.answerHeading, isCompact && styles.answerHeadingCompact]}>
+                Tekan huruf yang sama
+              </Text>
+              <View style={styles.choices}>
+                {round.choices.map((choice, index) => {
+                  const isCorrect =
+                    selectedChoice === choice && choice === round.target;
+                  const isIncorrect =
+                    selectedChoice === choice && choice !== round.target;
 
-          <View style={styles.answerArea}>
-            <Text style={[styles.answerHeading, isCompact && styles.answerHeadingCompact]}>
-              Tekan huruf yang sama
-            </Text>
-            <View style={styles.choices}>
-              {round.choices.map((choice, index) => {
-                const isCorrect =
-                  selectedChoice === choice && choice === round.target;
-                const isIncorrect =
-                  selectedChoice === choice && choice !== round.target;
+                  return (
+                    <Pressable
+                      accessibilityLabel={`Huruf ${choice}`}
+                      accessibilityRole="button"
+                      disabled={isTransitioning}
+                      key={choice}
+                      onPress={() => handleAnswer(choice)}
+                      style={({ pressed }) => [
+                        styles.choiceButton,
+                        isCompact && styles.choiceButtonCompact,
+                        { backgroundColor: CHOICE_COLORS[index] },
+                        isCorrect && styles.correctChoice,
+                        isIncorrect && styles.incorrectChoice,
+                        pressed && !isTransitioning && styles.choicePressed,
+                      ]}
+                    >
+                      <View style={styles.choiceShine} />
+                      <Text style={[styles.choiceText, isCompact && styles.choiceTextCompact]}>
+                        {choice}
+                      </Text>
+                      {isCorrect && <Text style={styles.choiceBadge}>✓</Text>}
+                    </Pressable>
+                  );
+                })}
+              </View>
 
-                return (
-                  <Pressable
-                    accessibilityLabel={`Huruf ${choice}`}
-                    accessibilityRole="button"
-                    disabled={isTransitioning}
-                    key={choice}
-                    onPress={() => handleAnswer(choice)}
-                    style={({ pressed }) => [
-                      styles.choiceButton,
-                      isCompact && styles.choiceButtonCompact,
-                      { backgroundColor: CHOICE_COLORS[index] },
-                      isCorrect && styles.correctChoice,
-                      isIncorrect && styles.incorrectChoice,
-                      pressed && !isTransitioning && styles.choicePressed,
-                    ]}
-                  >
-                    <View style={styles.choiceShine} />
-                    <Text style={[styles.choiceText, isCompact && styles.choiceTextCompact]}>
-                      {choice}
-                    </Text>
-                    {isCorrect && <Text style={styles.choiceBadge}>✓</Text>}
-                  </Pressable>
-                );
-              })}
-            </View>
-
-            <Animated.View
-              accessibilityLiveRegion="polite"
-              style={[
-                styles.feedbackArea,
-                feedback === "Betul!" && styles.correctFeedbackArea,
-                feedback === "Cuba lagi" && styles.tryFeedbackArea,
-                {
-                  transform: [
-                    { translateX: feedbackX },
-                    { scale: feedbackScale },
-                  ],
-                },
-              ]}
-            >
-              <Text
+              <Animated.View
+                accessibilityLiveRegion="polite"
                 style={[
-                  styles.feedback,
-                  feedback === "Betul!"
-                    ? styles.correctFeedback
-                    : styles.tryFeedback,
+                  styles.feedbackArea,
+                  feedback === "Betul!" && styles.correctFeedbackArea,
+                  feedback === "Cuba lagi" && styles.tryFeedbackArea,
+                  {
+                    transform: [
+                      { translateX: feedbackX },
+                      { scale: feedbackScale },
+                    ],
+                  },
                 ]}
               >
-                {feedback === "Betul!" ? "★ Betul!" : feedback || "Pilih satu huruf"}
+                <Text
+                  style={[
+                    styles.feedback,
+                    feedback === "Betul!"
+                      ? styles.correctFeedback
+                      : styles.tryFeedback,
+                  ]}
+                >
+                  {feedback === "Betul!" ? "★ Betul!" : feedback || "Pilih satu huruf"}
+                </Text>
+              </Animated.View>
+            </View>
+          </View>
+
+          <View style={[styles.mascotPanel, isCompact && styles.mascotPanelCompact]}>
+            <View style={[styles.speechBubble, isCompact && styles.speechBubbleCompact]}>
+              <Text style={[styles.speechText, isCompact && styles.speechTextCompact]}>
+                Pilih huruf yang betul!
               </Text>
+              <View style={styles.speechTail} />
+            </View>
+            <Animated.View
+              style={[
+                styles.mascotAnimation,
+                { transform: [{ translateY: mascotFloat }] },
+              ]}
+            >
+              <Image
+                accessibilityLabel="Kak Limau membantu mencari huruf"
+                resizeMode="contain"
+                source={KAK_LIMAU}
+                style={styles.mascot}
+              />
             </Animated.View>
           </View>
         </View>
@@ -628,25 +682,34 @@ const styles = StyleSheet.create({
   headerButtonPressed: {
     backgroundColor: "rgba(255,255,255,0.32)",
   },
-  mainRow: {
+  mainContentRow: {
     flex: 1,
     minHeight: 265,
     marginTop: 12,
     flexDirection: "row",
     gap: 18,
   },
-  mainRowCompact: {
+  mainContentRowCompact: {
     marginTop: 9,
-    gap: 12,
+    gap: 10,
   },
-  guideArea: {
-    flex: 1.18,
+  gamePanel: {
+    flex: 7,
     minWidth: 0,
-    position: "relative",
-    justifyContent: "center",
+    flexDirection: "row",
+    gap: 12,
+    borderRadius: 28,
+    backgroundColor: "rgba(255,255,255,0.42)",
+    padding: 8,
+  },
+  gamePanelCompact: {
+    gap: 8,
+    borderRadius: 22,
+    padding: 6,
   },
   questionCard: {
-    width: "84%",
+    flex: 0.82,
+    minWidth: 0,
     height: "100%",
     borderRadius: 28,
     borderWidth: 5,
@@ -654,8 +717,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff7c9",
     alignItems: "center",
     justifyContent: "center",
-    paddingLeft: 12,
-    paddingRight: "24%",
+    paddingHorizontal: 12,
     paddingVertical: 12,
     shadowColor: "#d79c00",
     shadowOffset: { width: 0, height: 5 },
@@ -664,11 +726,9 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   questionCardCompact: {
-    width: "86%",
     borderRadius: 22,
     borderWidth: 4,
-    paddingLeft: 8,
-    paddingRight: "24%",
+    paddingHorizontal: 8,
     paddingVertical: 8,
   },
   instructionPill: {
@@ -677,10 +737,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 7,
   },
+  instructionPillCompact: {
+    paddingHorizontal: 7,
+    paddingVertical: 5,
+  },
   instruction: {
     color: "#664500",
     fontSize: 21,
     fontWeight: "900",
+    textAlign: "center",
   },
   instructionCompact: {
     fontSize: 17,
@@ -704,27 +769,101 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: "#ffca3a",
   },
-  mascot: {
-    position: "absolute",
-    right: -6,
-    bottom: -4,
-    width: "50%",
-    height: "94%",
+  mascotPanel: {
+    flex: 3,
+    minWidth: 180,
+    borderRadius: 28,
+    backgroundColor: "#dff4ff",
+    borderWidth: 3,
+    borderColor: "#a6ddf5",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    paddingHorizontal: 8,
+    paddingTop: 10,
+    paddingBottom: 4,
+    overflow: "hidden",
+    shadowColor: "#247baa",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.14,
+    shadowRadius: 5,
+    elevation: 3,
   },
-  mascotCompact: {
-    right: -4,
-    bottom: -2,
-    width: "52%",
-    height: "92%",
+  mascotPanelCompact: {
+    minWidth: 145,
+    borderRadius: 22,
+    paddingHorizontal: 5,
+    paddingTop: 7,
+    paddingBottom: 2,
+  },
+  speechBubble: {
+    zIndex: 2,
+    width: "92%",
+    maxWidth: 240,
+    borderRadius: 18,
+    borderWidth: 2,
+    borderColor: "#75c4e8",
+    backgroundColor: "#ffffff",
+    paddingHorizontal: 13,
+    paddingVertical: 9,
+    alignItems: "center",
+    shadowColor: "#247baa",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  speechBubbleCompact: {
+    borderRadius: 15,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+  },
+  speechText: {
+    color: "#22516b",
+    fontSize: 16,
+    lineHeight: 20,
+    fontWeight: "900",
+    textAlign: "center",
+  },
+  speechTextCompact: {
+    fontSize: 13,
+    lineHeight: 16,
+  },
+  speechTail: {
+    position: "absolute",
+    bottom: -8,
+    left: "47%",
+    width: 14,
+    height: 14,
+    backgroundColor: "#ffffff",
+    borderRightWidth: 2,
+    borderBottomWidth: 2,
+    borderColor: "#75c4e8",
+    transform: [{ rotate: "45deg" }],
+  },
+  mascotAnimation: {
+    flex: 1,
+    width: "100%",
+    minHeight: 0,
+    alignItems: "center",
+    justifyContent: "flex-end",
+  },
+  mascot: {
+    width: "100%",
+    height: "100%",
   },
   answerArea: {
-    flex: 0.92,
-    minWidth: 280,
+    flex: 1.55,
+    minWidth: 0,
     borderRadius: 26,
     backgroundColor: "rgba(255,255,255,0.82)",
     paddingHorizontal: 16,
     paddingVertical: 12,
     justifyContent: "center",
+  },
+  answerAreaCompact: {
+    borderRadius: 20,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
   },
   answerHeading: {
     color: "#275676",
