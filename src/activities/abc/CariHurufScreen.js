@@ -412,20 +412,12 @@ export default function CariHurufScreen({ navigation }) {
               <View style={styles.targetUnderline} />
             </View>
 
-            <View style={[styles.mascotPanel, isCompact && styles.mascotPanelCompact]}>
-              {!isCompact && (
-                <View style={styles.speechBubble}>
-                  <Text style={styles.speechText}>Pilih jawapan yang betul!</Text>
-                  <View style={styles.speechTail} />
-                </View>
-              )}
-              <Image
-                accessibilityLabel="Kak Limau membantu mencari huruf"
-                resizeMode="contain"
-                source={KAK_LIMAU}
-                style={[styles.mascot, isCompact && styles.mascotCompact]}
-              />
-            </View>
+            <Image
+              accessibilityLabel="Kak Limau membantu mencari huruf"
+              resizeMode="contain"
+              source={KAK_LIMAU}
+              style={[styles.mascot, isCompact && styles.mascotCompact]}
+            />
           </View>
 
           <View style={styles.answerArea}>
@@ -650,19 +642,21 @@ const styles = StyleSheet.create({
   guideArea: {
     flex: 1.18,
     minWidth: 0,
-    flexDirection: "row",
-    gap: 10,
+    position: "relative",
+    justifyContent: "center",
   },
   questionCard: {
-    flex: 1,
-    minWidth: 190,
+    width: "84%",
+    height: "100%",
     borderRadius: 28,
     borderWidth: 5,
     borderColor: "#ffca3a",
     backgroundColor: "#fff7c9",
     alignItems: "center",
     justifyContent: "center",
-    padding: 12,
+    paddingLeft: 12,
+    paddingRight: "24%",
+    paddingVertical: 12,
     shadowColor: "#d79c00",
     shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 0.2,
@@ -670,10 +664,12 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   questionCardCompact: {
-    minWidth: 160,
+    width: "86%",
     borderRadius: 22,
     borderWidth: 4,
-    padding: 8,
+    paddingLeft: 8,
+    paddingRight: "24%",
+    paddingVertical: 8,
   },
   instructionPill: {
     backgroundColor: "#ffffff",
@@ -708,56 +704,18 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: "#ffca3a",
   },
-  mascotPanel: {
-    width: "38%",
-    minWidth: 118,
-    alignItems: "center",
-    justifyContent: "flex-end",
-  },
-  mascotPanelCompact: {
-    width: "31%",
-    minWidth: 88,
-  },
   mascot: {
-    width: "100%",
-    height: "69%",
+    position: "absolute",
+    right: -6,
+    bottom: -4,
+    width: "50%",
+    height: "94%",
   },
   mascotCompact: {
-    height: "82%",
-  },
-  speechBubble: {
-    maxWidth: 145,
-    backgroundColor: "#ffffff",
-    borderWidth: 2,
-    borderColor: "#80cbed",
-    borderRadius: 17,
-    paddingHorizontal: 11,
-    paddingVertical: 8,
-    marginBottom: 4,
-    shadowColor: "#247baa",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  speechText: {
-    color: "#22516b",
-    fontSize: 13,
-    lineHeight: 17,
-    fontWeight: "800",
-    textAlign: "center",
-  },
-  speechTail: {
-    position: "absolute",
-    bottom: -8,
-    left: "45%",
-    width: 14,
-    height: 14,
-    backgroundColor: "#ffffff",
-    borderRightWidth: 2,
-    borderBottomWidth: 2,
-    borderColor: "#80cbed",
-    transform: [{ rotate: "45deg" }],
+    right: -4,
+    bottom: -2,
+    width: "52%",
+    height: "92%",
   },
   answerArea: {
     flex: 0.92,
