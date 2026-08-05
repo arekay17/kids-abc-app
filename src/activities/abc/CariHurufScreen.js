@@ -770,7 +770,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffca3a",
   },
   mascotPanel: {
-    width: "28%",
+    width: "29%",
     minWidth: 0,
     borderRadius: 28,
     backgroundColor: "#dff4ff",
@@ -778,9 +778,9 @@ const styles = StyleSheet.create({
     borderColor: "#b9e5f7",
     alignItems: "center",
     justifyContent: "flex-end",
-    paddingHorizontal: 6,
-    paddingTop: 10,
-    paddingBottom: 4,
+    paddingHorizontal: 3,
+    paddingTop: 8,
+    paddingBottom: 0,
     overflow: "hidden",
     shadowColor: "#247baa",
     shadowOffset: { width: 0, height: 4 },
@@ -789,12 +789,12 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   mascotPanelCompact: {
-    width: "26%",
+    width: "28%",
     minWidth: 0,
     borderRadius: 22,
-    paddingHorizontal: 4,
-    paddingTop: 7,
-    paddingBottom: 2,
+    paddingHorizontal: 2,
+    paddingTop: 5,
+    paddingBottom: 0,
   },
   speechBubble: {
     zIndex: 2,
@@ -851,6 +851,7 @@ const styles = StyleSheet.create({
   mascot: {
     width: "100%",
     height: "100%",
+    transform: [{ scale: 1.16 }],
   },
   answerArea: {
     flex: 1.55,
